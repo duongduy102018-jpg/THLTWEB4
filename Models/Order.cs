@@ -6,6 +6,9 @@ namespace Webbanhang.Models
     {
         public int Id { get; set; }
 
+        public string? UserId { get; set; }
+        public ApplicationUser? User { get; set; }
+
         [Required, StringLength(100)]
         public string CustomerName { get; set; } = string.Empty;
 

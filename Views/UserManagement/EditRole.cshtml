@@ -1,0 +1,31 @@
+@model Webbanhang.Models.UserRoleEditViewModel
+@{
+    ViewData["Title"] = "Đổi vai trò";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="soft-card p-4 p-lg-5">
+                <h2 class="fw-bold mb-4">Đổi vai trò người dùng</h2>
+                <p><strong>@Model.FullName</strong><br />@Model.Email</p>
+
+                <form asp-action="EditRole" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="UserId" />
+                    <input type="hidden" asp-for="Email" />
+                    <input type="hidden" asp-for="FullName" />
+
+                    <div class="mb-3">
+                        <label asp-for="SelectedRole" class="form-label">Vai trò</label>
+                        <select asp-for="SelectedRole" asp-items="Model.RoleList" class="form-control"></select>
+                        <span asp-validation-for="SelectedRole" class="text-danger"></span>
+                    </div>
+
+                    <button class="btn btn-success">Lưu vai trò</button>
+                    <a asp-action="Index" class="btn btn-secondary">Quay lại</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

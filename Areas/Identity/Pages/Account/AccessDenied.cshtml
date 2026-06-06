@@ -1,0 +1,12 @@
+@page
+@model AccessDeniedModel
+@{
+    ViewData["Title"] = "Không có quyền truy cập";
+}
+<div class="container py-5">
+    <div class="alert alert-danger">
+        <h3>Không có quyền truy cập</h3>
+        <p>Tài khoản của bạn không có quyền sử dụng chức năng này.</p>
+    </div>
+    <a asp-controller="Home" asp-action="Index" class="btn btn-success">Về trang chủ</a>
+</div>

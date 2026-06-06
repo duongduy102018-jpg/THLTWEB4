@@ -13,40 +13,74 @@
     var favJson = Context.Session.GetString("HTPFoodFavorites");
     var favoriteIds = string.IsNullOrWhiteSpace(favJson) ? new List<int>() : JsonSerializer.Deserialize<List<int>>(favJson) ?? new List<int>();
     var role = Context.Session.GetString("HTPFoodRole");
-    var isAdmin = string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase);
+    var isAdmin = User?.IsInRole("Admin") == true || string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase);
 }
 
 <section class="shop-header">
-    <div class="container position-relative">
-        <span class="hero-badge">🛒 Cửa hàng trái cây</span>
-        <h1 class="fw-bold mt-3 display-5">Sản phẩm tươi mỗi ngày</h1>
-        <p>Chọn trái cây theo danh mục, khoảng giá, sắp xếp và thêm nhanh vào giỏ hàng.</p>
+    <div class="container">
+        <span class="hero-badge">🛒 Cửa hàng</span>
+        <h1 class="fw-bold mt-3 display-6">Danh sách sản phẩm</h1>
+        <p class="text-muted mb-0">Tìm kiếm, lọc danh mục, lọc giá và thao tác mua hàng trên cùng một màn hình.</p>
     </div>
 </section>
 
 <div class="container py-5">
     <form method="get" class="filter-box mb-4">
         <div class="row g-3 align-items-end">
-            <div class="col-lg-3"><label class="form-label">Tìm sản phẩm</label><input type="text" name="searchTerm" value="@Model.SearchTerm" class="form-control form-control-lg" placeholder="Nhập tên trái cây..." /></div>
-            <div class="col-lg-2"><label class="form-label">Danh mục</label>@Html.DropDownList("categoryId", categoryOptions, "Tất cả", new { @class = "form-select form-select-lg" })</div>
-            <div class="col-lg-2"><label class="form-label">Giá từ</label><input type="number" name="minPrice" value="@Model.MinPrice" class="form-control form-control-lg" placeholder="0" /></div>
-            <div class="col-lg-2"><label class="form-label">Giá đến</label><input type="number" name="maxPrice" value="@Model.MaxPrice" class="form-control form-control-lg" placeholder="500000" /></div>
-            <div class="col-lg-2"><label class="form-label">Sắp xếp</label>@Html.DropDownList("sortOrder", sortOptions, new { @class = "form-select form-select-lg" })</div>
-            <div class="col-lg-1 d-grid"><button class="btn btn-success btn-lg">Lọc</button></div>
+            <div class="col-lg-3 col-md-6">
+                <label class="form-label">Tìm sản phẩm</label>
+                <input type="text" name="searchTerm" value="@Model.SearchTerm" class="form-control" placeholder="Nhập tên trái cây..." />
+            </div>
+            <div class="col-lg-2 col-md-6">
+                <label class="form-label">Danh mục</label>
+                @Html.DropDownList("categoryId", categoryOptions, "Tất cả", new { @class = "form-select" })
+            </div>
+            <div class="col-lg-2 col-md-6">
+                <label class="form-label">Giá từ</label>
+                <input type="number" name="minPrice" value="@Model.MinPrice" class="form-control" placeholder="0" />
+            </div>
+            <div class="col-lg-2 col-md-6">
+                <label class="form-label">Giá đến</label>
+                <input type="number" name="maxPrice" value="@Model.MaxPrice" class="form-control" placeholder="500000" />
+            </div>
+            <div class="col-lg-2 col-md-6">
+                <label class="form-label">Sắp xếp</label>
+                @Html.DropDownList("sortOrder", sortOptions, new { @class = "form-select" })
+            </div>
+            <div class="col-lg-1 col-md-6 d-grid">
+                <button class="btn btn-success">Lọc</button>
+            </div>
         </div>
     </form>
 
     <div class="shop-tools mb-4">
-        <div><h4 class="fw-bold mb-1">Tìm thấy @Model.Products.Count() sản phẩm</h4><small class="text-muted">Mã giảm giá trong giỏ hàng: FRESH10, COMBO50</small></div>
+        <div>
+            <h4 class="fw-bold mb-1">@Model.Products.Count() sản phẩm</h4>
+            <small class="text-muted">Gợi ý mã giảm giá: FRESH10, COMBO50</small>
+        </div>
         <div class="d-flex gap-2 flex-wrap">
-            @if (!isAdmin) { <a asp-action="Favorites" class="btn btn-outline-danger px-4">❤ Yêu thích</a> }
-            @if (isAdmin) { <a asp-action="Add" class="btn btn-dark px-4">+ Thêm sản phẩm</a> }
+            @if (!isAdmin)
+            {
+                <a asp-action="Favorites" class="btn btn-outline-danger px-4">❤ Yêu thích</a>
+            }
+            @if (isAdmin)
+            {
+                <a asp-action="Add" class="btn btn-success px-4">+ Thêm sản phẩm</a>
+            }
         </div>
     </div>
 
     @if (!Model.Products.Any())
     {
-        <div class="empty-state"><div class="empty-icon">🔎</div><h3>Chưa có sản phẩm phù hợp</h3><p>Thử đổi từ khóa, khoảng giá hoặc chọn danh mục khác.</p></div>
+        <div class="empty-state">
+            <div class="empty-icon">🔎</div>
+            <h3>Chưa có sản phẩm phù hợp</h3>
+            <p class="text-muted">Thử đổi từ khóa, khoảng giá hoặc chọn danh mục khác.</p>
+            @if (isAdmin)
+            {
+                <a asp-action="Add" class="btn btn-success px-4">+ Thêm sản phẩm đầu tiên</a>
+            }
+        </div>
     }
     else
     {
@@ -56,25 +90,49 @@
                 var isFavorite = favoriteIds.Contains(item.Id);
                 <div class="col-xl-3 col-lg-4 col-md-6">
                     <div class="product-card">
-                        <a asp-action="Display" asp-route-id="@item.Id" class="product-img-wrap"><img src="@(string.IsNullOrEmpty(item.ImageUrl) ? Url.Content("~/images/khay-thap-cam.jpg") : item.ImageUrl)" alt="@item.Name" /><span class="fresh-tag">Tươi mỗi ngày</span></a>
+                        <a asp-action="Display" asp-route-id="@item.Id" class="product-img-wrap">
+                            <img src="@(string.IsNullOrEmpty(item.ImageUrl) ? Url.Content("~/images/khay-thap-cam.jpg") : item.ImageUrl)" alt="@item.Name" />
+                            <span class="fresh-tag">Tươi mỗi ngày</span>
+                        </a>
+
                         @if (!isAdmin)
                         {
-                            <form asp-action="ToggleFavorite" method="post" class="favorite-floating">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@item.Id" /><button title="Yêu thích" class="favorite-btn @(isFavorite ? "active" : "")">❤</button></form>
+                            <form asp-action="ToggleFavorite" method="post" class="favorite-floating">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@item.Id" />
+                                <button title="Yêu thích" class="favorite-btn @(isFavorite ? "active" : "")">❤</button>
+                            </form>
                         }
+
                         <div class="product-card-body">
-                            <small>@(item.Category?.Name ?? "Chưa phân loại")</small><h5>@item.Name</h5>
+                            <small>@(item.Category?.Name ?? "Chưa phân loại")</small>
+                            <h5>@item.Name</h5>
                             <p>@(string.IsNullOrWhiteSpace(item.Description) ? "Sản phẩm tươi ngon được chọn lọc mỗi ngày." : item.Description)</p>
                             <strong class="price">@item.Price.ToString("N0") VNĐ</strong>
+
                             <div class="product-action-grid mt-3">
                                 @if (!isAdmin)
                                 {
-                                    <form asp-controller="Cart" asp-action="AddToCart" method="post"><input type="hidden" name="id" value="@item.Id" /><button class="btn btn-success w-100">Thêm giỏ</button></form>
-                                    <form asp-controller="Cart" asp-action="BuyNow" method="post">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@item.Id" /><button class="btn btn-warning w-100">Mua ngay</button></form>
+                                    <form asp-controller="Cart" asp-action="AddToCart" method="post">
+                                        <input type="hidden" name="id" value="@item.Id" />
+                                        <button class="btn btn-success w-100">Thêm giỏ</button>
+                                    </form>
+                                    <form asp-controller="Cart" asp-action="BuyNow" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@item.Id" />
+                                        <button class="btn btn-warning w-100">Mua ngay</button>
+                                    </form>
                                 }
                                 <a asp-action="Display" asp-route-id="@item.Id" class="btn btn-outline-success w-100">Chi tiết</a>
                             </div>
+
                             @if (isAdmin)
-                            { <div class="admin-actions mt-3"><a asp-action="Update" asp-route-id="@item.Id">Sửa sản phẩm</a><a asp-action="Delete" asp-route-id="@item.Id" class="text-danger">Xóa</a></div> }
+                            {
+                                <div class="admin-actions mt-3">
+                                    <a asp-action="Update" asp-route-id="@item.Id">Sửa</a>
+                                    <a asp-action="Delete" asp-route-id="@item.Id" class="text-danger">Xóa</a>
+                                </div>
+                            }
                         </div>
                     </div>
                 </div>

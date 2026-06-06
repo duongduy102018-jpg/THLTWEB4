@@ -1,0 +1,94 @@
+@model List<Webbanhang.Models.UserManagementItemViewModel>
+@{
+    ViewData["Title"] = "Quản lý người dùng";
+}
+
+<section class="page-hero">
+    <div class="container position-relative">
+        <span class="hero-badge">🔐 Admin</span>
+        <h1 class="fw-bold mt-3 display-5">Quản lý người dùng</h1>
+        <p>Admin có thể xem danh sách người dùng, đổi vai trò, khóa hoặc mở khóa tài khoản.</p>
+    </div>
+</section>
+
+<div class="container py-5">
+    <div class="soft-card p-3">
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Người dùng</th>
+                        <th>Email</th>
+                        <th>Vai trò</th>
+                        <th>Trạng thái</th>
+                        <th style="width: 300px;">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in Model)
+                    {
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <img src="@(string.IsNullOrWhiteSpace(user.AvatarUrl) ? Url.Content("~/images/khay-thap-cam.jpg") : user.AvatarUrl)" style="width:46px;height:46px;object-fit:cover;border-radius:50%;" />
+                                    <div>
+                                        <strong>@user.FullName</strong><br />
+                                        <small>@user.PhoneNumber</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                @user.Email<br />
+                                <small class="@(user.EmailConfirmed ? "text-success" : "text-danger")">
+                                    @(user.EmailConfirmed ? "Đã xác thực email" : "Chưa xác thực email")
+                                </small>
+                            </td>
+                            <td>@string.Join(", ", user.Roles)</td>
+                            <td>
+                                @if (user.IsLocked)
+                                {
+                                    <span class="badge bg-danger">Đang khóa</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success">Hoạt động</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <a asp-action="EditRole" asp-route-id="@user.Id" class="btn btn-warning btn-sm">Đổi vai trò</a>
+
+                                    @if (user.IsLocked)
+                                    {
+                                        <form asp-action="Unlock" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@user.Id" />
+                                            <button class="btn btn-success btn-sm">Mở khóa</button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <form asp-action="Lock" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@user.Id" />
+                                            <button class="btn btn-danger btn-sm">Khóa</button>
+                                        </form>
+                                    }
+
+                                    @if (!user.EmailConfirmed)
+                                    {
+                                        <form asp-action="ConfirmEmail" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@user.Id" />
+                                            <button class="btn btn-outline-success btn-sm">Xác thực email</button>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

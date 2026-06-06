@@ -2,108 +2,121 @@
 @{
     ViewData["Title"] = "Trang chủ";
     var role = Context.Session.GetString("HTPFoodRole");
-    var isAdmin = string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase);
+    var isAdmin = User?.IsInRole("Admin") == true || string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase);
 }
 
 <section class="hero-section">
-    <div class="container hero-content">
+    <div class="container">
         <div class="row align-items-center g-5">
             <div class="col-lg-6">
-                <span class="hero-badge">🍃 Trái cây tuyển chọn mỗi ngày</span>
-                <h1 class="hero-title mt-3">Tươi ngon hơn cho từng đơn hàng.</h1>
-                <p class="lead mt-3">HTP Food mô phỏng website bán trái cây chuyên nghiệp: sản phẩm, giỏ hàng, mã giảm giá, đặt hàng, theo dõi đơn và phân quyền Admin/User rõ ràng.</p>
+                <span class="hero-badge">🍃 Trái cây tươi mỗi ngày</span>
+                <h1 class="hero-title mt-3">Mua trái cây sạch, quản lý đơn hàng dễ dàng.</h1>
                 <div class="hero-actions">
-                    <a asp-controller="Product" asp-action="Index" class="btn btn-success btn-lg px-4">Mua sắm ngay</a>
-                    <a asp-controller="Home" asp-action="Contact" class="btn btn-outline-success btn-lg px-4">Tư vấn giỏ quà</a>
+                    <a asp-controller="Product" asp-action="Index" class="btn btn-success btn-lg px-4">Xem sản phẩm</a>
+                    @if (isAdmin)
+                    {
+                        <a asp-controller="Product" asp-action="Add" class="btn btn-outline-success btn-lg px-4">+ Thêm sản phẩm</a>
+                    }
+                    else
+                    {
+                        <a asp-controller="Cart" asp-action="Index" class="btn btn-outline-success btn-lg px-4">Xem giỏ hàng</a>
+                    }
                 </div>
                 <div class="stats-grid">
-                    <div class="stat-card"><strong>24h</strong><span>Đổi trả nhanh</span></div>
+                    <div class="stat-card"><strong>24h</strong><span>Hỗ trợ đổi trả</span></div>
                     <div class="stat-card"><strong>500k</strong><span>Miễn phí ship</span></div>
-                    <div class="stat-card"><strong>100%</strong><span>Phân quyền rõ</span></div>
+                    <div class="stat-card"><strong>5</strong><span>Vai trò người dùng</span></div>
                 </div>
             </div>
             <div class="col-lg-6 hero-art">
                 <div class="hero-card">
-                    <img src="~/images/khay-thap-cam.jpg" alt="Khay trái cây HTP Food" />
                 </div>
-                <div class="floating-card"><span>Ưu đãi hôm nay</span>FRESH10 giảm 10%</div>
+
             </div>
         </div>
     </div>
 </section>
 
-<section class="section container">
-    <div class="section-title">
-        <div>
-            <span class="mini-badge">Dịch vụ</span>
-        </div>
-    </div>
-    <div class="row g-4">
-        <div class="col-md-4"><div class="feature-card"><div class="feature-icon">🚚</div><h5>Giao hàng nhanh</h5><p class="text-muted mb-0">Tự tính phí ship, miễn phí cho đơn từ 500.000 VNĐ.</p></div></div>
-        <div class="col-md-4"><div class="feature-card"><div class="feature-icon">🎁</div><h5>Giỏ quà & combo</h5><p class="text-muted mb-0">Phù hợp khay tiệc, sinh nhật, văn phòng và quà tặng.</p></div></div>
-    </div>
-</section>
 
-<section class="section container pt-0">
-    <div class="section-title">
-        <div>
-            <span class="mini-badge">Danh mục</span>
-            <h2>Mua theo nhóm sản phẩm</h2>
+
+@if (Model.Categories.Any())
+{
+    <section class="section container pt-0">
+        <div class="section-title">
+            <div>
+                <span class="mini-badge">Danh mục</span>
+                <h2>Mua theo nhóm sản phẩm</h2>
+            </div>
+            <a asp-controller="Product" asp-action="Index" class="btn btn-outline-success px-4">Xem tất cả</a>
         </div>
-        <a asp-controller="Product" asp-action="Index" class="btn btn-outline-success px-4">Xem tất cả</a>
-    </div>
-    <div class="d-flex flex-wrap gap-3">
-        @foreach (var category in Model.Categories)
-        {
-            <a asp-controller="Product" asp-action="Index" asp-route-categoryId="@category.Id" class="category-chip">🍏 @category.Name</a>
-        }
-    </div>
-</section>
+        <div class="d-flex flex-wrap gap-3">
+            @foreach (var category in Model.Categories)
+            {
+                <a asp-controller="Product" asp-action="Index" asp-route-categoryId="@category.Id" class="category-chip">🍏 @category.Name</a>
+            }
+        </div>
+    </section>
+}
 
 <section class="section container pt-0">
     <div class="section-title">
         <div>
             <span class="mini-badge">Nổi bật</span>
             <h2>Sản phẩm bán chạy</h2>
-            <p class="section-subtitle mb-0">Các sản phẩm mẫu có thể thêm giỏ, mua ngay và xem chi tiết.</p>
+            <p class="section-subtitle mb-0">Danh sách sản phẩm mẫu hoặc sản phẩm bạn thêm trong hệ thống.</p>
         </div>
-        <a asp-controller="Product" asp-action="Index" class="btn btn-outline-success px-4">Xem cửa hàng</a>
+        <a asp-controller="Product" asp-action="Index" class="btn btn-outline-success px-4">Vào cửa hàng</a>
     </div>
-    <div class="row g-4">
-        @foreach (var product in Model.FeaturedProducts)
-        {
-            <div class="col-xl-3 col-lg-4 col-md-6">
-                <div class="product-card">
-                    <a asp-controller="Product" asp-action="Display" asp-route-id="@product.Id" class="product-img-wrap">
-                        <img src="@(string.IsNullOrEmpty(product.ImageUrl) ? Url.Content("~/images/khay-thap-cam.jpg") : product.ImageUrl)" alt="@product.Name" />
-                        <span class="fresh-tag">Tươi mới</span>
-                    </a>
-                    <div class="product-card-body">
-                        <small>@(product.Category?.Name ?? "Trái cây")</small>
-                        <h5>@product.Name</h5>
-                        <p>@(string.IsNullOrWhiteSpace(product.Description) ? "Sản phẩm tươi ngon được chọn lọc mỗi ngày." : product.Description)</p>
-                        <strong class="price d-block mb-3">@product.Price.ToString("N0") VNĐ</strong>
-                        <div class="product-action-grid mt-auto">
-                            @if (!isAdmin)
-                            {
-                                <form asp-controller="Cart" asp-action="AddToCart" method="post"><input type="hidden" name="id" value="@product.Id" /><button class="btn btn-success w-100">Thêm giỏ</button></form>
-                                <form asp-controller="Cart" asp-action="BuyNow" method="post">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@product.Id" /><button class="btn btn-warning w-100">Mua ngay</button></form>
-                            }
-                            <a asp-controller="Product" asp-action="Display" asp-route-id="@product.Id" class="btn btn-outline-success w-100">Chi tiết</a>
+
+    @if (!Model.FeaturedProducts.Any())
+    {
+        <div class="empty-state">
+            <div class="empty-icon">🍊</div>
+            <h3>Chưa có sản phẩm</h3>
+            <p class="text-muted">Đăng nhập Admin và thêm sản phẩm để hiển thị tại trang chủ.</p>
+            @if (isAdmin)
+            {
+                <a asp-controller="Product" asp-action="Add" class="btn btn-success px-4">+ Thêm sản phẩm</a>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var product in Model.FeaturedProducts)
+            {
+                <div class="col-xl-3 col-lg-4 col-md-6">
+                    <div class="product-card">
+                        <a asp-controller="Product" asp-action="Display" asp-route-id="@product.Id" class="product-img-wrap">
+                            <img src="@(string.IsNullOrEmpty(product.ImageUrl) ? Url.Content("~/images/khay-thap-cam.jpg") : product.ImageUrl)" alt="@product.Name" />
+                            <span class="fresh-tag">Tươi mới</span>
+                        </a>
+                        <div class="product-card-body">
+                            <small>@(product.Category?.Name ?? "Trái cây")</small>
+                            <h5>@product.Name</h5>
+                            <p>@(string.IsNullOrWhiteSpace(product.Description) ? "Sản phẩm tươi ngon được chọn lọc mỗi ngày." : product.Description)</p>
+                            <strong class="price d-block mb-3">@product.Price.ToString("N0") VNĐ</strong>
+                            <div class="product-action-grid mt-auto">
+                                @if (!isAdmin)
+                                {
+                                    <form asp-controller="Cart" asp-action="AddToCart" method="post"><input type="hidden" name="id" value="@product.Id" /><button class="btn btn-success w-100">Thêm giỏ</button></form>
+                                    <form asp-controller="Cart" asp-action="BuyNow" method="post">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@product.Id" /><button class="btn btn-warning w-100">Mua ngay</button></form>
+                                }
+                                <a asp-controller="Product" asp-action="Display" asp-route-id="@product.Id" class="btn btn-outline-success w-100">Chi tiết</a>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        }
-    </div>
+            }
+        </div>
+    }
 </section>
 
 <section class="container pb-5">
     <div class="promo-banner">
         <div>
-            <span>Combo văn phòng</span>
-            <h2>Đặt khay trái cây cho công ty, sinh nhật và sự kiện</h2>
-            <p>Thiết kế theo ngân sách, hỗ trợ ghi chú giao hàng và theo dõi trạng thái đơn.</p>
+            <span>HTP Food</span>
+            <h2>Đặt trái cây cho gia đình, văn phòng và sự kiện</h2>
         </div>
         <a asp-controller="Product" asp-action="Index" class="btn btn-light px-4">Đặt ngay</a>
     </div>

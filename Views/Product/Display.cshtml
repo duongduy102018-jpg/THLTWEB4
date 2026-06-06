@@ -2,7 +2,7 @@
 @{
     ViewData["Title"] = Model.Name;
     var role = Context.Session.GetString("HTPFoodRole");
-    var isAdmin = string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase);
+    var isAdmin = User?.IsInRole("Admin") == true || string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase);
 }
 
 <div class="container py-5">

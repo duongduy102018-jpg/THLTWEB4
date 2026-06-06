@@ -1,0 +1,83 @@
+@model Webbanhang.Models.ProfileViewModel
+@{
+    ViewData["Title"] = "Hồ sơ cá nhân";
+}
+
+<section class="page-hero">
+    <div class="container position-relative">
+        <span class="hero-badge">👤 Tài khoản</span>
+        <h1 class="fw-bold mt-3 display-5">Hồ sơ cá nhân</h1>
+        <p>Xem và cập nhật thông tin cá nhân, số điện thoại, địa chỉ và ảnh đại diện.</p>
+    </div>
+</section>
+
+<div class="container py-5">
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="soft-card p-4 text-center">
+                <img src="@(string.IsNullOrWhiteSpace(Model.AvatarUrl) ? Url.Content("~/images/khay-thap-cam.jpg") : Model.AvatarUrl)"
+                     alt="Avatar"
+                     class="rounded-circle mb-3"
+                     style="width:150px;height:150px;object-fit:cover;" />
+                <h4 class="fw-bold">@Model.FullName</h4>
+                <p class="text-muted mb-3">@Model.Email</p>
+
+                <form asp-action="UploadAvatar" method="post" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <input type="file" name="avatar" class="form-control mb-3" accept="image/*" />
+                    <button type="submit" class="btn btn-success w-100">Cập nhật ảnh đại diện</button>
+                </form>
+
+                <a asp-action="ChangePassword" class="btn btn-outline-success w-100 mt-3">Đổi mật khẩu</a>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="soft-card p-4 p-lg-5">
+                <h3 class="fw-bold mb-4">Thông tin người dùng</h3>
+
+                <form asp-action="Index" method="post" class="row g-3">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                    <div class="col-md-6">
+                        <label asp-for="FullName" class="form-label"></label>
+                        <input asp-for="FullName" class="form-control form-control-lg" />
+                        <span asp-validation-for="FullName" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Email</label>
+                        <input value="@Model.Email" class="form-control form-control-lg" disabled />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="PhoneNumber" class="form-label"></label>
+                        <input asp-for="PhoneNumber" class="form-control form-control-lg" />
+                        <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="Age" class="form-label"></label>
+                        <input asp-for="Age" class="form-control form-control-lg" />
+                        <span asp-validation-for="Age" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-12">
+                        <label asp-for="Address" class="form-label"></label>
+                        <input asp-for="Address" class="form-control form-control-lg" />
+                        <span asp-validation-for="Address" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-success btn-lg px-4">Lưu hồ sơ</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

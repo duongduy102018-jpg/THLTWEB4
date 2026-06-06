@@ -1,0 +1,30 @@
+﻿@model Webbanhang.Models.Category
+
+@{
+    ViewData["Title"] = "Thêm danh mục";
+}
+
+<div class="container py-5">
+    <div class="soft-card p-4">
+        <h2 class="fw-bold mb-4">Thêm danh mục</h2>
+
+        <form asp-controller="Categories" asp-action="Add" method="post">
+            @Html.AntiForgeryToken()
+
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="mb-3">
+                <label asp-for="Name" class="form-label">Tên danh mục</label>
+                <input asp-for="Name" class="form-control" placeholder="Ví dụ: Trái cây nhập khẩu" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+
+            <button type="submit" class="btn btn-success px-4">Lưu</button>
+            <a asp-controller="Categories" asp-action="Index" class="btn btn-secondary px-4">Quay lại</a>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

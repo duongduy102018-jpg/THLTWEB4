@@ -1,0 +1,47 @@
+@using Microsoft.AspNetCore.Identity
+@using Webbanhang.Models
+
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+
+@if (SignInManager.IsSignedIn(User))
+{
+    var currentUser = await UserManager.GetUserAsync(User);
+    var displayName = !string.IsNullOrWhiteSpace(currentUser?.FullName)
+        ? currentUser.FullName
+        : UserManager.GetUserName(User);
+    var avatar = string.IsNullOrWhiteSpace(currentUser?.AvatarUrl)
+        ? Url.Content("~/images/khay-thap-cam.jpg")
+        : currentUser.AvatarUrl;
+
+    <a asp-controller="Profile" asp-action="Index" class="d-flex align-items-center gap-2 text-decoration-none text-dark">
+        <img src="@avatar" alt="avatar" style="width:34px;height:34px;object-fit:cover;border-radius:50%;" />
+        <span class="user-name d-none d-xl-inline">Xin chào @displayName</span>
+    </a>
+
+    <a class="btn btn-outline-success px-3" asp-controller="Profile" asp-action="Index">Hồ sơ</a>
+
+    <form class="d-inline"
+          asp-area="Identity"
+          asp-page="/Account/Logout"
+          asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })"
+          method="post">
+        <button type="submit" class="btn btn-outline-danger px-3">
+            Đăng xuất
+        </button>
+    </form>
+}
+else
+{
+    <a class="btn btn-outline-success px-3"
+       asp-area="Identity"
+       asp-page="/Account/Login">
+        Đăng nhập
+    </a>
+
+    <a class="btn btn-success px-3"
+       asp-area="Identity"
+       asp-page="/Account/Register">
+        Đăng ký
+    </a>
+}

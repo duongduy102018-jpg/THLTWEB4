@@ -1,0 +1,9 @@
+@page
+@model ConfirmEmailModel
+@{
+    ViewData["Title"] = "Xác thực email";
+}
+<div class="container py-5">
+    <div class="alert alert-info">@Model.StatusMessage</div>
+    <a asp-page="./Login" class="btn btn-success">Đăng nhập</a>
+</div>

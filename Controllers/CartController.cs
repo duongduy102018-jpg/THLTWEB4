@@ -1,4 +1,6 @@
 using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Webbanhang.Helpers;
@@ -14,11 +16,16 @@ namespace Webbanhang.Controllers
 
         private readonly IProductRepository _productRepository;
         private readonly ApplicationDbContext _context;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public CartController(IProductRepository productRepository, ApplicationDbContext context)
+        public CartController(
+            IProductRepository productRepository,
+            ApplicationDbContext context,
+            UserManager<ApplicationUser> userManager)
         {
             _productRepository = productRepository;
             _context = context;
+            _userManager = userManager;
         }
 
         public IActionResult Index()
@@ -156,19 +163,9 @@ namespace Webbanhang.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        [Authorize]
         public IActionResult Checkout()
         {
-            if (!AuthSession.IsLoggedIn(HttpContext))
-            {
-                TempData["Error"] = "Vui lòng đăng nhập tài khoản User trước khi đặt hàng.";
-
-                return RedirectToAction(
-                    "Login",
-                    "Account",
-                    new { returnUrl = Url.Action(nameof(Checkout), "Cart") }
-                );
-            }
-
             var summary = BuildSummary();
 
             if (!summary.Items.Any())
@@ -180,6 +177,7 @@ namespace Webbanhang.Controllers
             return View(summary);
         }
 
+        [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ConfirmOrder(
@@ -189,17 +187,6 @@ namespace Webbanhang.Controllers
             string paymentMethod,
             string? note)
         {
-            if (!AuthSession.IsLoggedIn(HttpContext))
-            {
-                TempData["Error"] = "Vui lòng đăng nhập tài khoản User trước khi đặt hàng.";
-
-                return RedirectToAction(
-                    "Login",
-                    "Account",
-                    new { returnUrl = Url.Action(nameof(Checkout), "Cart") }
-                );
-            }
-
             var summary = BuildSummary();
 
             if (!summary.Items.Any())
@@ -216,8 +203,11 @@ namespace Webbanhang.Controllers
                 return RedirectToAction(nameof(Checkout));
             }
 
+            var user = await _userManager.GetUserAsync(User);
+
             var order = new Order
             {
+                UserId = user?.Id,
                 CustomerName = customerName.Trim(),
                 Phone = phone.Trim(),
                 Address = address.Trim(),
@@ -241,6 +231,7 @@ namespace Webbanhang.Controllers
             };
 
             _context.Orders.Add(order);
+
             await _context.SaveChangesAsync();
 
             RememberOrderForCurrentUser(order.Id);
@@ -253,6 +244,7 @@ namespace Webbanhang.Controllers
             return RedirectToAction(nameof(Success), new { id = order.Id });
         }
 
+        [Authorize]
         public async Task<IActionResult> Success(int id)
         {
             var order = await _context.Orders
@@ -264,61 +256,63 @@ namespace Webbanhang.Controllers
                 return NotFound();
             }
 
-            if (!CanViewOrder(id))
+            if (!CanViewOrder(order))
             {
                 TempData["Error"] = "Bạn không có quyền xem đơn hàng này.";
-                return RedirectToAction("AccessDenied", "Account");
+                return Redirect("/Identity/Account/AccessDenied");
             }
 
             return View(order);
         }
 
+        [Authorize]
         public async Task<IActionResult> Orders()
         {
-            if (!AuthSession.IsLoggedIn(HttpContext))
+            var isAdmin = User.IsInRole(SD.Role_Admin);
+            var isEmployee = User.IsInRole(SD.Role_Employee);
+            var canManageOrders = isAdmin || isEmployee;
+
+            ViewBag.IsAdmin = isAdmin;
+            ViewBag.IsEmployee = isEmployee;
+            ViewBag.CanManageOrders = canManageOrders;
+
+            IQueryable<Order> query = _context.Orders
+                .Include(o => o.Items)
+                .Include(o => o.User);
+
+            if (!canManageOrders)
             {
-                TempData["Error"] = "Vui lòng đăng nhập để theo dõi đơn hàng.";
-
-                return RedirectToAction(
-                    "Login",
-                    "Account",
-                    new { returnUrl = Url.Action(nameof(Orders), "Cart") }
-                );
-            }
-
-            ViewBag.IsAdmin = AuthSession.IsAdmin(HttpContext);
-
-            IQueryable<Order> query = _context.Orders.Include(o => o.Items);
-
-            if (!AuthSession.IsAdmin(HttpContext))
-            {
+                var userId = _userManager.GetUserId(User);
                 var ids = GetMyOrderIds();
 
-                if (!ids.Any())
-                {
-                    return View(new List<Order>());
-                }
-
-                query = query.Where(o => ids.Contains(o.Id));
+                query = query.Where(o => o.UserId == userId || ids.Contains(o.Id));
             }
 
             var orders = await query
                 .OrderByDescending(o => o.CreatedAt)
                 .ToListAsync();
 
+            if (canManageOrders)
+            {
+                ViewBag.TotalRevenue = orders.Sum(o => o.Total);
+
+                ViewBag.CompletedRevenue = orders
+                    .Where(o =>
+                        string.Equals(o.Status, "Hoàn tất", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(o.Status, "Hoàn thành", StringComparison.OrdinalIgnoreCase))
+                    .Sum(o => o.Total);
+
+                ViewBag.TotalOrders = orders.Count;
+            }
+
             return View(orders);
         }
 
+        [Authorize(Roles = SD.Role_Admin + "," + SD.Role_Employee)]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateOrderStatus(int id, string status)
         {
-            if (!AuthSession.IsAdmin(HttpContext))
-            {
-                TempData["Error"] = "User chỉ được theo dõi đơn hàng, không được sửa trạng thái đơn.";
-                return RedirectToAction("AccessDenied", "Account");
-            }
-
             var order = await _context.Orders.FindAsync(id);
 
             if (order == null)
@@ -396,9 +390,17 @@ namespace Webbanhang.Controllers
             };
         }
 
-        private bool CanViewOrder(int orderId)
+        private bool CanViewOrder(Order order)
         {
-            return AuthSession.IsAdmin(HttpContext) || GetMyOrderIds().Contains(orderId);
+            if (User.IsInRole(SD.Role_Admin) || User.IsInRole(SD.Role_Employee))
+            {
+                return true;
+            }
+
+            var userId = _userManager.GetUserId(User);
+
+            return (!string.IsNullOrWhiteSpace(userId) && order.UserId == userId)
+                || GetMyOrderIds().Contains(order.Id);
         }
 
         private void RememberOrderForCurrentUser(int orderId)
@@ -410,10 +412,7 @@ namespace Webbanhang.Controllers
                 ids.Add(orderId);
             }
 
-            HttpContext.Session.SetString(
-                AuthSession.MyOrderIdsKey,
-                JsonSerializer.Serialize(ids)
-            );
+            HttpContext.Session.SetString(AuthSession.MyOrderIdsKey, JsonSerializer.Serialize(ids));
         }
 
         private List<int> GetMyOrderIds()
@@ -436,10 +435,7 @@ namespace Webbanhang.Controllers
 
         private void SaveCart(List<CartItem> cart)
         {
-            HttpContext.Session.SetString(
-                CartSessionKey,
-                JsonSerializer.Serialize(cart)
-            );
+            HttpContext.Session.SetString(CartSessionKey, JsonSerializer.Serialize(cart));
         }
     }
 }

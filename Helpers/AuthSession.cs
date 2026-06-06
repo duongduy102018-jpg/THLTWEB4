@@ -8,12 +8,15 @@ namespace Webbanhang.Helpers
         public const string MyOrderIdsKey = "HTPFoodMyOrderIds";
 
         public static bool IsLoggedIn(HttpContext httpContext)
-            => !string.IsNullOrWhiteSpace(httpContext.Session.GetString(UserNameKey));
+            => httpContext.User?.Identity?.IsAuthenticated == true
+               || !string.IsNullOrWhiteSpace(httpContext.Session.GetString(UserNameKey));
 
         public static bool IsAdmin(HttpContext httpContext)
-            => string.Equals(httpContext.Session.GetString(RoleKey), "Admin", StringComparison.OrdinalIgnoreCase);
+            => httpContext.User?.IsInRole("Admin") == true
+               || string.Equals(httpContext.Session.GetString(RoleKey), "Admin", StringComparison.OrdinalIgnoreCase);
 
         public static bool IsUser(HttpContext httpContext)
-            => string.Equals(httpContext.Session.GetString(RoleKey), "User", StringComparison.OrdinalIgnoreCase);
+            => httpContext.User?.IsInRole("User") == true
+               || string.Equals(httpContext.Session.GetString(RoleKey), "User", StringComparison.OrdinalIgnoreCase);
     }
 }

@@ -1,0 +1,32 @@
+﻿@model Webbanhang.Models.Category
+
+@{
+    ViewData["Title"] = "Xóa danh mục";
+}
+
+<div class="container py-5">
+    <div class="soft-card p-4">
+        <h2 class="fw-bold text-danger mb-3">Xóa danh mục</h2>
+
+        <div class="alert alert-warning">
+            Bạn có chắc chắn muốn xóa danh mục này không?
+        </div>
+
+        <p>
+            <strong>Mã:</strong> #@Model.Id
+        </p>
+
+        <p>
+            <strong>Tên danh mục:</strong> @Model.Name
+        </p>
+
+        <form asp-controller="Categories" asp-action="DeleteConfirmed" method="post">
+            @Html.AntiForgeryToken()
+
+            <input type="hidden" asp-for="Id" />
+
+            <button type="submit" class="btn btn-danger px-4">Xóa</button>
+            <a asp-controller="Categories" asp-action="Index" class="btn btn-secondary px-4">Hủy</a>
+        </form>
+    </div>
+</div>

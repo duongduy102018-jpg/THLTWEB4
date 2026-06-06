@@ -1,0 +1,11 @@
+@page
+@model RegisterConfirmationModel
+@{
+    ViewData["Title"] = "Xác nhận đăng ký";
+}
+<div class="container py-5">
+    <div class="alert alert-success">
+        Tài khoản @Model.Email đã được tạo. Vui lòng kiểm tra email để xác thực tài khoản.
+    </div>
+    <a asp-page="./Login" class="btn btn-success">Đăng nhập</a>
+</div>

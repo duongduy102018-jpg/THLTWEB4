@@ -10,10 +10,8 @@
     var cartCount = cartItems.Sum(x => x.Quantity);
     var favCount = favoriteIds.Count;
     var role = session?.GetString("HTPFoodRole");
-    var fullName = session?.GetString("HTPFoodFullName");
-    var isLoggedIn = !string.IsNullOrWhiteSpace(role);
-    var isAdmin = string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase);
-    var isUser = string.Equals(role, "User", StringComparison.OrdinalIgnoreCase);
+    var isAdmin = User?.IsInRole(SD.Role_Admin) == true || string.Equals(role, SD.Role_Admin, StringComparison.OrdinalIgnoreCase);
+    var isUser = User?.IsInRole(SD.Role_User) == true || string.Equals(role, SD.Role_User, StringComparison.OrdinalIgnoreCase);
 }
 <!DOCTYPE html>
 <html lang="vi">
@@ -30,101 +28,122 @@
 <body>
     <div class="top-bar">
         <div class="container d-flex flex-wrap justify-content-between gap-2">
-            <span>🚚 Giao nhanh trong ngày tại TP.HCM • Miễn phí từ <strong>500.000 VNĐ</strong></span>
-            <span>Demo: <strong>admin@htpfood.vn / Admin123</strong> • <strong>user@htpfood.vn / User123</strong></span>
+            <span>🚚 Giao nhanh trong ngày tại TP.HCM</span>
+            <span>Miễn phí vận chuyển từ <strong>500.000 VNĐ</strong></span>
         </div>
     </div>
 
-    <header class="sticky-top app-header">
+    <header class="app-header sticky-top">
         <nav class="navbar navbar-expand-lg navbar-light">
             <div class="container">
                 <a class="navbar-brand brand-logo" asp-controller="Home" asp-action="Index">
-                    <span class="brand-icon">🍊</span> HTP Food
+                    <span class="brand-icon">🍊</span>
+                    <span>HTP Food</span>
                 </a>
+
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar" aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
+
                 <div class="collapse navbar-collapse" id="mainNavbar">
-                    <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
+                    <ul class="navbar-nav mx-auto mb-2 mb-lg-0 main-menu">
                         <li class="nav-item"><a class="nav-link" asp-controller="Home" asp-action="Index">Trang chủ</a></li>
                         <li class="nav-item"><a class="nav-link" asp-controller="Product" asp-action="Index">Sản phẩm</a></li>
                         @if (!isAdmin)
                         {
                             <li class="nav-item"><a class="nav-link" asp-controller="Product" asp-action="Favorites">Yêu thích</a></li>
-                        }
-                        <li class="nav-item"><a class="nav-link" asp-controller="Cart" asp-action="Orders">@(isAdmin ? "Quản lý đơn" : "Theo dõi đơn")</a></li>
-                        <li class="nav-item"><a class="nav-link" asp-controller="Home" asp-action="Contact">Liên hệ</a></li>
-                    </ul>
-                    <div class="d-flex align-items-center gap-2 nav-actions flex-wrap">
-                        @if (!isAdmin)
-                        {
-                            <a class="nav-icon-btn" asp-controller="Product" asp-action="Favorites">❤ <span>@favCount</span></a>
-                            <a class="btn btn-outline-success px-3" asp-controller="Cart" asp-action="Index">🛒 Giỏ hàng <span class="cart-badge">@cartCount</span></a>
+                            <li class="nav-item"><a class="nav-link" asp-controller="Cart" asp-action="Orders">Đơn hàng</a></li>
                         }
                         @if (isAdmin)
                         {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Cart" asp-action="Orders">Quản lý đơn</a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Categories" asp-action="Index">Danh mục</a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="UserManagement" asp-action="Index">Người dùng</a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Reports" asp-action="Revenue">Doanh thu</a>
+                            </li>
+                        }
+                        @if (!isAdmin)
+                        {
+                            <a class="icon-link" asp-controller="Product" asp-action="Favorites" title="Yêu thích">❤ <span>@favCount</span></a>
+                            <a class="btn btn-outline-success btn-sm-pill" asp-controller="Cart" asp-action="Index">🛒 Giỏ <span class="cart-badge">@cartCount</span></a>
+                        }
+
+                        @if (isAdmin)
+                        {
                             <span class="role-pill admin">Admin</span>
-                            <a class="btn btn-success px-3" asp-controller="Product" asp-action="Add">+ Sản phẩm</a>
+
+                            <a class="btn btn-outline-success btn-sm-pill"
+                               asp-controller="Categories"
+                               asp-action="Index">
+                                Danh mục
+                            </a>
+
+                            <a class="btn btn-success btn-sm-pill"
+                               asp-controller="Product"
+                               asp-action="Add">
+                                + Sản phẩm
+                            </a>
                         }
                         else if (isUser)
                         {
                             <span class="role-pill user">User</span>
                         }
-                        @if (isLoggedIn)
-                        {
-                            <span class="user-name d-none d-xl-inline">@fullName</span>
-                            <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
-                                @Html.AntiForgeryToken()
-                                <button class="btn btn-outline-danger px-3">Đăng xuất</button>
-                            </form>
-                        }
-                        else
-                        {
-                            <a class="btn btn-outline-success px-3" asp-controller="Account" asp-action="Login">Đăng nhập</a>
-                            <a class="btn btn-success px-3" asp-controller="Account" asp-action="Register">Đăng ký</a>
-                        }
+
+                        <partial name="_LoginPartial" />
                     </div>
                 </div>
             </div>
         </nav>
     </header>
 
-    <main role="main">
-        @if (TempData["Success"] != null)
-        {
-            <div class="container mt-3"><div class="alert alert-success">@TempData["Success"]</div></div>
-        }
-        @if (TempData["Error"] != null)
-        {
-            <div class="container mt-3"><div class="alert alert-danger">@TempData["Error"]</div></div>
-        }
+    <main class="page-main" role="main">
+        <div class="toast-area container">
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success app-alert">@TempData["Success"]</div>
+            }
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger app-alert">@TempData["Error"]</div>
+            }
+        </div>
         @RenderBody()
     </main>
 
     <footer class="site-footer">
         <div class="container py-5">
             <div class="row g-4">
-                <div class="col-lg-4 col-md-6">
-                    <div class="footer-brand-badge">🍊</div>
-                    <h4 class="fw-bold mb-3">HTP Food</h4>
-                    <p class="mb-0">Website bán trái cây tươi với giao diện chuyên nghiệp, phân quyền Admin/User, giỏ hàng, mã giảm giá và theo dõi đơn hàng.</p>
+                <div class="col-lg-5">
+                    <div class="footer-brand"><span>🍊</span><strong>HTP Food</strong></div>
+                    <p class="mt-3 mb-0">Website bán trái cây tươi, hỗ trợ giỏ hàng, đặt hàng, phân quyền người dùng và quản trị hệ thống.</p>
                 </div>
-                <div class="col-lg-2 col-md-6">
-                    <h6 class="fw-bold">Cửa hàng</h6>
+                <div class="col-lg-2 col-md-4">
+                    <h6>Cửa hàng</h6>
                     <a asp-controller="Home" asp-action="Index">Trang chủ</a>
                     <a asp-controller="Product" asp-action="Index">Sản phẩm</a>
                     <a asp-controller="Cart" asp-action="Index">Giỏ hàng</a>
+                </div>
+                <div class="col-lg-2 col-md-4">
+                    <h6>Quản lý</h6>
                     <a asp-controller="Cart" asp-action="Orders">Đơn hàng</a>
+                    <a asp-controller="Profile" asp-action="Index">Hồ sơ</a>
+                    <a asp-controller="Home" asp-action="Contact">Liên hệ</a>
                 </div>
-                <div class="col-lg-3 col-md-6">
-                    <h6 class="fw-bold">Cam kết</h6>
-                    <p class="mb-2">Tươi mới mỗi ngày, đóng gói sạch, giao nhanh và hỗ trợ đổi trả trong 24h nếu sản phẩm không đạt.</p>
-                </div>
-                <div class="col-lg-3 col-md-6">
-                    <h6 class="fw-bold">Liên hệ</h6>
-                    <p class="mb-2">475A Điện Biên Phủ, TP.HCM</p>
-                    <p class="mb-2">Hotline: 0909 000 000</p>
-                    <p class="mb-0">Email: support@htpfood.vn</p>
+                <div class="col-lg-3 col-md-4">
+                    <h6>Liên hệ</h6>
+                    <p class="mb-1">475A Điện Biên Phủ, TP.HCM</p>
+                    <p class="mb-1">0909 000 000</p>
+                    <p class="mb-0">support@htpfood.vn</p>
                 </div>
             </div>
         </div>

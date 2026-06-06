@@ -1,0 +1,49 @@
+@model Webbanhang.Models.RevenueReportViewModel
+@{
+    ViewData["Title"] = "Doanh thu hệ thống";
+}
+
+<section class="page-hero">
+    <div class="container position-relative">
+        <span class="hero-badge">📊 Admin</span>
+        <h1 class="fw-bold mt-3 display-5">Thống kê doanh thu</h1>
+        <p>Quản lý đơn hàng đã đặt và tổng hợp doanh thu của hệ thống.</p>
+    </div>
+</section>
+
+<div class="container py-5">
+    <div class="row g-3 mb-4">
+        <div class="col-md-3"><div class="soft-card p-3"><span>Tổng đơn</span><h3>@Model.TotalOrders</h3></div></div>
+        <div class="col-md-3"><div class="soft-card p-3"><span>Tổng doanh thu</span><h3>@Model.TotalRevenue.ToString("N0") VNĐ</h3></div></div>
+        <div class="col-md-3"><div class="soft-card p-3"><span>Doanh thu hoàn tất</span><h3>@Model.CompletedRevenue.ToString("N0") VNĐ</h3></div></div>
+        <div class="col-md-3"><div class="soft-card p-3"><span>Đơn hoàn tất</span><h3>@Model.CompletedOrders</h3></div></div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4"><div class="alert alert-warning">Chờ/chuẩn bị: <strong>@Model.PendingOrders</strong></div></div>
+        <div class="col-md-4"><div class="alert alert-info">Đang giao: <strong>@Model.ShippingOrders</strong></div></div>
+        <div class="col-md-4"><div class="alert alert-danger">Đã hủy: <strong>@Model.CancelledOrders</strong></div></div>
+    </div>
+
+    <div class="soft-card p-3">
+        <h4 class="fw-bold mb-3">Đơn hàng gần đây</h4>
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead><tr><th>Mã</th><th>Khách hàng</th><th>Ngày</th><th>Trạng thái</th><th>Tổng tiền</th></tr></thead>
+                <tbody>
+                @foreach (var order in Model.RecentOrders)
+                {
+                    <tr>
+                        <td>#@order.Id</td>
+                        <td>@order.CustomerName</td>
+                        <td>@order.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>@order.Status</td>
+                        <td><strong>@order.Total.ToString("N0") VNĐ</strong></td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+        <a asp-controller="Cart" asp-action="Orders" class="btn btn-success">Quản lý đơn hàng</a>
+    </div>
+</div>
