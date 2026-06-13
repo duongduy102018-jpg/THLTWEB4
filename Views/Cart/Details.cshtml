@@ -1,0 +1,171 @@
+@model Webbanhang.Models.Order
+@using Webbanhang.Models
+
+@{
+    ViewData["Title"] = $"Chi tiết đơn hàng #{Model.Id}";
+
+    var steps = new[]
+    {
+        "Đã xác nhận",
+        "Đã gửi hàng",
+        "Đang vận chuyển",
+        "Đã giao"
+    };
+
+    var activeIndex = Array.IndexOf(steps, Model.Status);
+    if (activeIndex < 0)
+    {
+        activeIndex = Model.Status == "Đã hủy" ? -1 : 0;
+    }
+
+    var memberPoints = (int)(ViewBag.MemberPoints ?? 0);
+    var memberTier = (string)(ViewBag.MemberTier ?? "Hạng Thành viên Đồng");
+}
+
+<section class="page-hero">
+    <div class="container position-relative">
+        <span class="hero-badge">📦 Chi tiết đơn hàng</span>
+        <h1 class="fw-bold mt-3 display-5">Đơn hàng #@Model.Id</h1>
+        <p>Theo dõi hóa đơn chi tiết, trạng thái giao hàng và các tùy chọn hỗ trợ sau khi mua.</p>
+    </div>
+</section>
+
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-4">
+        <a asp-controller="Cart" asp-action="Orders" class="btn btn-outline-success px-4">← Về lịch sử mua hàng</a>
+
+        <form asp-controller="Cart" asp-action="ReOrder" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model.Id" />
+            <button type="submit" class="btn btn-success px-4">Đặt lại toàn bộ đơn</button>
+        </form>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="soft-card p-4 mb-4">
+                <div class="d-flex justify-content-between gap-3 flex-wrap mb-3">
+                    <div>
+                        <span class="hero-badge">🚚 Timeline giao hàng</span>
+                        <h3 class="fw-bold mt-2 mb-1">Trạng thái hiện tại: @Model.Status</h3>
+                        <p class="text-muted mb-0">Timeline trực quan theo các mốc chuẩn của đơn hàng.</p>
+                    </div>
+                    <span class="order-status-pill align-self-start">@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                </div>
+
+                @if (Model.Status == "Đã hủy")
+                {
+                    <div class="alert alert-danger mb-0">Đơn hàng này đã bị hủy nên timeline giao hàng không còn tiếp tục.</div>
+                }
+                else
+                {
+                    <div class="delivery-timeline">
+                        @for (var i = 0; i < steps.Length; i++)
+                        {
+                            var css = i < activeIndex ? "done" : i == activeIndex ? "active" : "";
+                            <div class="timeline-step @css">
+                                <div class="timeline-dot">@(i + 1)</div>
+                                <strong>@steps[i]</strong>
+                                <small>
+                                    @(i <= activeIndex ? "Đã cập nhật" : "Đang chờ")
+                                </small>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div class="soft-card p-4">
+                <div class="d-flex justify-content-between gap-2 flex-wrap mb-3">
+                    <div>
+                        <span class="hero-badge">🧾 Hóa đơn chi tiết</span>
+                        <h3 class="fw-bold mt-2">Sản phẩm trong đơn</h3>
+                    </div>
+                    <strong class="price">@Model.Total.ToString("N0") VNĐ</strong>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Sản phẩm</th>
+                                <th>Giá</th>
+                                <th>Số lượng</th>
+                                <th>Thành tiền</th>
+                                <th>Đặt lại</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Items)
+                            {
+                                <tr>
+                                    <td><strong>@item.ProductName</strong></td>
+                                    <td>@item.Price.ToString("N0") VNĐ</td>
+                                    <td>@item.Quantity</td>
+                                    <td><strong>@item.Total.ToString("N0") VNĐ</strong></td>
+                                    <td>
+                                        <form asp-controller="Cart" asp-action="ReOrderItem" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="productId" value="@item.ProductId" />
+                                            <input type="hidden" name="quantity" value="@item.Quantity" />
+                                            <button type="submit" class="btn btn-outline-success btn-sm">Đặt lại</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="invoice-summary ms-auto mt-3">
+                    <div class="summary-row"><span>Tổng tiền hàng</span><strong>@Model.Subtotal.ToString("N0") VNĐ</strong></div>
+                    <div class="summary-row"><span>Phí vận chuyển</span><strong>@Model.ShippingFee.ToString("N0") VNĐ</strong></div>
+                    <div class="summary-row"><span>Giảm giá</span><strong>-@Model.Discount.ToString("N0") VNĐ</strong></div>
+                    @if (!string.IsNullOrWhiteSpace(Model.CouponCode))
+                    {
+                        <div class="summary-row"><span>Mã khuyến mãi</span><strong>@Model.CouponCode</strong></div>
+                    }
+                    <hr />
+                    <div class="summary-row total"><span>Tổng thanh toán</span><strong>@Model.Total.ToString("N0") VNĐ</strong></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="soft-card p-4 mb-4">
+                <span class="hero-badge">👤 Thông tin nhận hàng</span>
+                <h4 class="fw-bold mt-2">@Model.CustomerName</h4>
+                <div class="support-list mt-3">
+                    <div><span>Số điện thoại</span><strong>@Model.Phone</strong></div>
+                    <div><span>Địa chỉ</span><strong>@Model.Address</strong></div>
+                    <div><span>Thanh toán</span><strong>@Model.PaymentMethod</strong></div>
+                    @if (!string.IsNullOrWhiteSpace(Model.Note))
+                    {
+                        <div><span>Ghi chú</span><strong>@Model.Note</strong></div>
+                    }
+                </div>
+            </div>
+
+            <div class="soft-card p-4 mb-4">
+                <span class="hero-badge">🎁 Thành viên</span>
+                <h4 class="fw-bold mt-2 mb-1">@memberTier</h4>
+                <p class="text-muted mb-3">Điểm thưởng hiện tại của bạn.</p>
+                <div class="member-points w-100">
+                    <span>Điểm tích lũy</span>
+                    <strong>@memberPoints</strong>
+                    <small>Áp dụng cho các đơn hàng hợp lệ</small>
+                </div>
+            </div>
+
+            <div class="soft-card p-4">
+                <span class="hero-badge">🛟 Hỗ trợ đơn hàng</span>
+                <h4 class="fw-bold mt-2">Bạn cần hỗ trợ?</h4>
+                <div class="d-grid gap-2 mt-3">
+                    <a asp-controller="Home" asp-action="Contact" class="btn btn-outline-success">Liên hệ cửa hàng</a>
+                    <a asp-controller="Product" asp-action="Index" class="btn btn-success">Tiếp tục mua sắm</a>
+                </div>
+                <p class="small text-muted mt-3 mb-0">Khi có vấn đề về giao hàng, vui lòng cung cấp mã đơn #@Model.Id để được hỗ trợ nhanh hơn.</p>
+            </div>
+        </div>
+    </div>
+</div>

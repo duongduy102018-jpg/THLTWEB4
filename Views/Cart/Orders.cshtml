@@ -6,40 +6,48 @@
     var isEmployee = ViewBag.IsEmployee == true;
     var canManageOrders = ViewBag.CanManageOrders == true || isAdmin || isEmployee;
 
-    ViewData["Title"] = canManageOrders ? "Quản lý đơn hàng" : "Theo dõi đơn hàng";
+    ViewData["Title"] = canManageOrders ? "Quản lý đơn hàng" : "Lịch sử mua hàng";
 
     var statuses = new[]
     {
-        "Chờ xác nhận",
-        "Đang chuẩn bị",
-        "Đang giao",
-        "Hoàn thành",
-        "Hoàn tất",
+        "Đang xử lý",
+        "Đã xác nhận",
+        "Đã gửi",
+        "Đã gửi hàng",
+        "Đang vận chuyển",
+        "Đã giao",
         "Đã hủy"
     };
+
+    var filterTabs = new[] { "Tất cả", "Đang xử lý", "Đã gửi", "Đã giao", "Đã hủy" };
+    var currentFilter = (string)(ViewBag.StatusFilter ?? "Tất cả");
+    var keyword = (string)(ViewBag.Keyword ?? string.Empty);
+
+    var memberPoints = (int)(ViewBag.MemberPoints ?? 0);
+    var memberTier = (string)(ViewBag.MemberTier ?? "Hạng Thành viên Đồng");
+    var nextTierText = (string)(ViewBag.NextTierText ?? "Tích lũy thêm điểm bằng cách mua hàng");
 }
 
 <section class="page-hero">
     <div class="container position-relative">
         <span class="hero-badge">
-            @(isAdmin ? "🔐 Admin" : isEmployee ? "👷 Nhân viên" : "📍 Theo dõi")
+            @(isAdmin ? "🔐 Admin" : isEmployee ? "👷 Nhân viên" : "🧾 Lịch sử")
         </span>
 
         <h1 class="fw-bold mt-3 display-5">
-            @(canManageOrders ? "Quản lý đơn hàng" : "Theo dõi đơn hàng của bạn")
+            @(canManageOrders ? "Order Management Dashboard" : "Lịch sử mua hàng")
         </h1>
 
         <p>
             @(canManageOrders
-                ? "Admin và Nhân viên có thể xem tất cả đơn hàng và cập nhật trạng thái xử lý."
-                : "Bạn chỉ được xem đơn hàng của mình, không được sửa trạng thái hay chỉnh sửa thông tin đơn.")
+                ? "Theo dõi giao dịch, lọc nhanh trạng thái, xuất dữ liệu và cập nhật trạng thái đơn hàng trực tiếp."
+                : "Xem lại toàn bộ đơn hàng cũ, điểm thưởng, hạng thành viên và đặt lại nhanh các sản phẩm yêu thích.")
         </p>
     </div>
 </section>
 
 <div class="container py-5">
-
-    <div class="d-flex justify-content-end mb-4 gap-2">
+    <div class="d-flex justify-content-end mb-4 gap-2 flex-wrap">
         <a asp-controller="Product" asp-action="Index" class="btn btn-outline-success px-4">
             Về cửa hàng
         </a>
@@ -47,33 +55,71 @@
         @if (isAdmin)
         {
             <a asp-controller="Reports" asp-action="Revenue" class="btn btn-success px-4">
-                Xem doanh thu
+                Dashboard doanh thu
             </a>
         }
     </div>
 
+    @if (!canManageOrders)
+    {
+        <div class="member-panel mb-4">
+            <div>
+                <span class="hero-badge">🎁 Khách hàng thân thiết</span>
+                <h3 class="fw-bold mt-2 mb-1">@memberTier</h3>
+                <p class="mb-0 text-muted">@nextTierText</p>
+            </div>
+
+            <div class="member-points">
+                <span>Điểm thưởng tích lũy</span>
+                <strong>@memberPoints</strong>
+                <small>1 điểm / 10.000 VNĐ đơn hàng hợp lệ</small>
+            </div>
+        </div>
+    }
+
     @if (canManageOrders)
     {
-        <div class="row g-3 mb-4">
-            <div class="col-md-4">
-                <div class="soft-card p-3">
-                    <span>Tổng đơn</span>
-                    <h3>@ViewBag.TotalOrders</h3>
-                </div>
+        <div class="row g-3 mb-4 admin-kpi-grid">
+            <div class="col-md-3"><div class="soft-card p-3"><span>Tổng đơn</span><h3>@ViewBag.TotalOrders</h3></div></div>
+            <div class="col-md-3"><div class="soft-card p-3"><span>Đang xử lý</span><h3>@ViewBag.ProcessingOrders</h3></div></div>
+            <div class="col-md-3"><div class="soft-card p-3"><span>Đã gửi</span><h3>@ViewBag.SentOrders</h3></div></div>
+            <div class="col-md-3"><div class="soft-card p-3"><span>Đã giao</span><h3>@ViewBag.CompletedOrders</h3></div></div>
+        </div>
+
+        <div class="order-dashboard-toolbar soft-card p-3 mb-4">
+            <div>
+                <h4 class="fw-bold mb-1">Bộ lọc thông minh</h4>
+                <p class="text-muted mb-0">Lọc theo trạng thái: Đã giao, Đã gửi, Đang xử lý, Đã hủy.</p>
             </div>
 
-            <div class="col-md-4">
-                <div class="soft-card p-3">
-                    <span>Tổng doanh thu</span>
-                    <h3>@(((decimal)(ViewBag.TotalRevenue ?? 0m)).ToString("N0")) VNĐ</h3>
-                </div>
+            <form asp-controller="Cart" asp-action="Orders" method="get" class="order-search-form">
+                <input type="hidden" name="statusFilter" value="@currentFilter" />
+                <input name="keyword" value="@keyword" class="form-control" placeholder="Tìm mã đơn, khách, SĐT..." />
+                <button class="btn btn-success" type="submit">Tìm</button>
+            </form>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-4">
+            <div class="order-filter-tabs">
+                @foreach (var tab in filterTabs)
+                {
+                    <a asp-controller="Cart"
+                       asp-action="Orders"
+                       asp-route-statusFilter="@tab"
+                       asp-route-keyword="@keyword"
+                       class="@(currentFilter == tab ? "active" : "")">
+                        @tab
+                    </a>
+                }
             </div>
 
-            <div class="col-md-4">
-                <div class="soft-card p-3">
-                    <span>Doanh thu hoàn tất</span>
-                    <h3>@(((decimal)(ViewBag.CompletedRevenue ?? 0m)).ToString("N0")) VNĐ</h3>
-                </div>
+            <div class="d-flex gap-2 flex-wrap">
+                <a asp-controller="Cart" asp-action="ExportOrders" asp-route-statusFilter="@currentFilter" asp-route-format="csv" class="btn btn-outline-success">
+                    Xuất CSV
+                </a>
+                <a asp-controller="Cart" asp-action="ExportOrders" asp-route-statusFilter="@currentFilter" asp-route-format="excel" class="btn btn-success">
+                    Xuất Excel
+                </a>
             </div>
         </div>
     }
@@ -84,13 +130,13 @@
             <div class="empty-icon">📦</div>
 
             <h3>
-                @(canManageOrders ? "Chưa có đơn hàng" : "Bạn chưa có đơn hàng nào")
+                @(canManageOrders ? "Không có đơn hàng phù hợp" : "Bạn chưa có đơn hàng nào")
             </h3>
 
             <p>
                 @(canManageOrders
-                    ? "Khi khách đặt hàng thành công, đơn sẽ xuất hiện tại đây."
-                    : "Sau khi đặt hàng thành công, đơn của bạn sẽ xuất hiện tại trang theo dõi này.")
+                    ? "Hãy đổi bộ lọc hoặc từ khóa tìm kiếm để xem các đơn hàng khác."
+                    : "Sau khi đặt hàng thành công, đơn của bạn sẽ xuất hiện tại trang lịch sử mua hàng này.")
             </p>
 
             @if (!canManageOrders)
@@ -110,10 +156,11 @@
                         <tr>
                             <th>Mã</th>
                             <th>Khách hàng</th>
-                            <th>Sản phẩm</th>
+                            <th>Mặt hàng đã mua</th>
                             <th>Tổng tiền</th>
                             <th>Ngày đặt</th>
                             <th>Trạng thái</th>
+                            <th>Thao tác</th>
                         </tr>
                     </thead>
 
@@ -121,9 +168,7 @@
                         @foreach (var order in Model)
                         {
                             <tr>
-                                <td>
-                                    <strong>#@order.Id</strong>
-                                </td>
+                                <td><strong>#@order.Id</strong></td>
 
                                 <td>
                                     <strong>@order.CustomerName</strong><br />
@@ -134,47 +179,64 @@
                                 <td>
                                     @foreach (var item in order.Items)
                                     {
-                                        <div>@item.ProductName x @item.Quantity</div>
+                                        <div class="reorder-line">
+                                            <span>@item.ProductName x @item.Quantity</span>
+
+                                            @if (!canManageOrders)
+                                            {
+                                                <form asp-controller="Cart" asp-action="ReOrderItem" method="post">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="productId" value="@item.ProductId" />
+                                                    <input type="hidden" name="quantity" value="@item.Quantity" />
+                                                    <button type="submit" class="btn btn-outline-success btn-sm">Đặt lại</button>
+                                                </form>
+                                            }
+                                        </div>
                                     }
                                 </td>
 
-                                <td>
-                                    <strong class="price">@order.Total.ToString("N0") VNĐ</strong>
-                                </td>
+                                <td><strong class="price">@order.Total.ToString("N0") VNĐ</strong></td>
 
-                                <td>
-                                    @order.CreatedAt.ToString("dd/MM/yyyy HH:mm")
-                                </td>
+                                <td>@order.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
 
                                 <td>
                                     @if (canManageOrders)
                                     {
-                                        <form asp-controller="Cart"
-                                              asp-action="UpdateOrderStatus"
-                                              method="post"
-                                              class="d-flex gap-2 align-items-center">
+                                        <form asp-controller="Cart" asp-action="UpdateOrderStatus" method="post" class="d-flex gap-2 align-items-center">
                                             @Html.AntiForgeryToken()
-
                                             <input type="hidden" name="id" value="@order.Id" />
 
-                                            <select name="status" class="form-select form-select-sm" style="min-width: 150px;">
+                                            <select name="status" class="form-select form-select-sm" style="min-width: 165px;">
                                                 @foreach (var status in statuses)
                                                 {
-                                                    <option value="@status" selected="@(order.Status == status)">
-                                                        @status
-                                                    </option>
+                                                    <option value="@status" selected="@(order.Status == status)">@status</option>
                                                 }
                                             </select>
 
-                                            <button type="submit" class="btn btn-success btn-sm">
-                                                Cập nhật
-                                            </button>
+                                            <button type="submit" class="btn btn-success btn-sm">Cập nhật</button>
                                         </form>
                                     }
                                     else
                                     {
                                         <span class="order-status-pill">@order.Status</span>
                                     }
+                                </td>
+
+                                <td>
+                                    <div class="d-flex gap-2 flex-wrap">
+                                        <a asp-controller="Cart" asp-action="Details" asp-route-id="@order.Id" class="btn btn-outline-success btn-sm">
+                                            Chi tiết
+                                        </a>
+
+                                        @if (!canManageOrders)
+                                        {
+                                            <form asp-controller="Cart" asp-action="ReOrder" method="post">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@order.Id" />
+                                                <button type="submit" class="btn btn-success btn-sm">Đặt lại đơn</button>
+                                            </form>
+                                        }
+                                    </div>
                                 </td>
                             </tr>
                         }
@@ -192,15 +254,23 @@
                         <span class="status-pill">@order.Status</span>
                     </div>
 
-                    <p class="mb-1 mt-2">
-                        <strong>@order.CustomerName</strong> - @order.Phone
-                    </p>
-
+                    <p class="mb-1 mt-2"><strong>@order.CustomerName</strong> - @order.Phone</p>
                     <p class="text-muted mb-2">@order.Address</p>
 
                     @foreach (var item in order.Items)
                     {
-                        <div>@item.ProductName x @item.Quantity</div>
+                        <div class="reorder-line">
+                            <span>@item.ProductName x @item.Quantity</span>
+                            @if (!canManageOrders)
+                            {
+                                <form asp-controller="Cart" asp-action="ReOrderItem" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="productId" value="@item.ProductId" />
+                                    <input type="hidden" name="quantity" value="@item.Quantity" />
+                                    <button type="submit" class="btn btn-outline-success btn-sm">Đặt lại</button>
+                                </form>
+                            }
+                        </div>
                     }
 
                     <hr />
@@ -210,28 +280,33 @@
                         <strong class="price">@order.Total.ToString("N0") VNĐ</strong>
                     </div>
 
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a asp-controller="Cart" asp-action="Details" asp-route-id="@order.Id" class="btn btn-outline-success btn-sm">Chi tiết</a>
+
+                        @if (!canManageOrders)
+                        {
+                            <form asp-controller="Cart" asp-action="ReOrder" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@order.Id" />
+                                <button type="submit" class="btn btn-success btn-sm">Đặt lại đơn</button>
+                            </form>
+                        }
+                    </div>
+
                     @if (canManageOrders)
                     {
-                        <form asp-controller="Cart"
-                              asp-action="UpdateOrderStatus"
-                              method="post"
-                              class="d-flex gap-2">
+                        <form asp-controller="Cart" asp-action="UpdateOrderStatus" method="post" class="d-flex gap-2 mt-3">
                             @Html.AntiForgeryToken()
-
                             <input type="hidden" name="id" value="@order.Id" />
 
                             <select name="status" class="form-select form-select-sm">
                                 @foreach (var status in statuses)
                                 {
-                                    <option value="@status" selected="@(order.Status == status)">
-                                        @status
-                                    </option>
+                                    <option value="@status" selected="@(order.Status == status)">@status</option>
                                 }
                             </select>
 
-                            <button type="submit" class="btn btn-success btn-sm">
-                                Lưu
-                            </button>
+                            <button type="submit" class="btn btn-success btn-sm">Lưu</button>
                         </form>
                     }
                 </div>

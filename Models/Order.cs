@@ -22,7 +22,7 @@ namespace Webbanhang.Models
         public string? Note { get; set; }
 
         [StringLength(30)]
-        public string Status { get; set; } = "Chờ xác nhận";
+        public string Status { get; set; } = "Đã xác nhận";
 
         [StringLength(30)]
         public string PaymentMethod { get; set; } = "COD";

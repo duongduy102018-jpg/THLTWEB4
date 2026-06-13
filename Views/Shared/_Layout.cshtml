@@ -11,6 +11,8 @@
     var favCount = favoriteIds.Count;
     var role = session?.GetString("HTPFoodRole");
     var isAdmin = User?.IsInRole(SD.Role_Admin) == true || string.Equals(role, SD.Role_Admin, StringComparison.OrdinalIgnoreCase);
+    var isEmployee = User?.IsInRole(SD.Role_Employee) == true || string.Equals(role, SD.Role_Employee, StringComparison.OrdinalIgnoreCase);
+    var canManageOrders = isAdmin || isEmployee;
     var isUser = User?.IsInRole(SD.Role_User) == true || string.Equals(role, SD.Role_User, StringComparison.OrdinalIgnoreCase);
 }
 <!DOCTYPE html>
@@ -26,6 +28,8 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body>
+    <a class="skip-link" href="#mainContent">Bỏ qua menu</a>
+
     <div class="top-bar">
         <div class="container d-flex flex-wrap justify-content-between gap-2">
             <span>🚚 Giao nhanh trong ngày tại TP.HCM</span>
@@ -34,14 +38,14 @@
     </div>
 
     <header class="app-header sticky-top">
-        <nav class="navbar navbar-expand-lg navbar-light">
+        <nav class="navbar navbar-expand-lg navbar-light" aria-label="Thanh điều hướng chính">
             <div class="container">
-                <a class="navbar-brand brand-logo" asp-controller="Home" asp-action="Index">
+                <a class="navbar-brand brand-logo" asp-controller="Home" asp-action="Index" aria-label="HTP Food - Trang chủ">
                     <span class="brand-icon">🍊</span>
                     <span>HTP Food</span>
                 </a>
 
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar" aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar" aria-controls="mainNavbar" aria-expanded="false" aria-label="Mở menu">
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
@@ -49,50 +53,36 @@
                     <ul class="navbar-nav mx-auto mb-2 mb-lg-0 main-menu">
                         <li class="nav-item"><a class="nav-link" asp-controller="Home" asp-action="Index">Trang chủ</a></li>
                         <li class="nav-item"><a class="nav-link" asp-controller="Product" asp-action="Index">Sản phẩm</a></li>
-                        @if (!isAdmin)
+                        @if (!canManageOrders)
                         {
                             <li class="nav-item"><a class="nav-link" asp-controller="Product" asp-action="Favorites">Yêu thích</a></li>
                             <li class="nav-item"><a class="nav-link" asp-controller="Cart" asp-action="Orders">Đơn hàng</a></li>
+                            <li class="nav-item"><a class="nav-link" asp-controller="Home" asp-action="Contact">Liên hệ</a></li>
                         }
-                        @if (isAdmin)
+                        @if (canManageOrders)
                         {
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Cart" asp-action="Orders">Quản lý đơn</a>
-                            </li>
-
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Categories" asp-action="Index">Danh mục</a>
-                            </li>
-
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="UserManagement" asp-action="Index">Người dùng</a>
-                            </li>
-
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Reports" asp-action="Revenue">Doanh thu</a>
-                            </li>
+                            <li class="nav-item"><a class="nav-link" asp-controller="Cart" asp-action="Orders">Quản lý đơn</a></li>
+                            <li class="nav-item"><a class="nav-link" asp-controller="Categories" asp-action="Index">Danh mục</a></li>
+                            <li class="nav-item"><a class="nav-link" asp-controller="UserManagement" asp-action="Index">Người dùng</a></li>
+                            <li class="nav-item"><a class="nav-link" asp-controller="Reports" asp-action="Revenue">Doanh thu</a></li>
                         }
-                        @if (!isAdmin)
+                    </ul>
+
+                    <div class="nav-actions">
+                        @if (!canManageOrders)
                         {
-                            <a class="icon-link" asp-controller="Product" asp-action="Favorites" title="Yêu thích">❤ <span>@favCount</span></a>
+                            <a class="icon-link" asp-controller="Product" asp-action="Favorites" title="Yêu thích" aria-label="Danh sách yêu thích">❤ <span>@favCount</span></a>
                             <a class="btn btn-outline-success btn-sm-pill" asp-controller="Cart" asp-action="Index">🛒 Giỏ <span class="cart-badge">@cartCount</span></a>
                         }
 
                         @if (isAdmin)
                         {
                             <span class="role-pill admin">Admin</span>
-
-                            <a class="btn btn-outline-success btn-sm-pill"
-                               asp-controller="Categories"
-                               asp-action="Index">
-                                Danh mục
-                            </a>
-
-                            <a class="btn btn-success btn-sm-pill"
-                               asp-controller="Product"
-                               asp-action="Add">
-                                + Sản phẩm
-                            </a>
+                            <a class="btn btn-success btn-sm-pill" asp-controller="Product" asp-action="Add">+ Sản phẩm</a>
+                        }
+                        else if (isEmployee)
+                        {
+                            <span class="role-pill admin">Seller</span>
                         }
                         else if (isUser)
                         {
@@ -106,15 +96,15 @@
         </nav>
     </header>
 
-    <main class="page-main" role="main">
+    <main id="mainContent" class="page-main" role="main">
         <div class="toast-area container">
             @if (TempData["Success"] != null)
             {
-                <div class="alert alert-success app-alert">@TempData["Success"]</div>
+                <div class="alert alert-success app-alert" role="status">@TempData["Success"]</div>
             }
             @if (TempData["Error"] != null)
             {
-                <div class="alert alert-danger app-alert">@TempData["Error"]</div>
+                <div class="alert alert-danger app-alert" role="alert">@TempData["Error"]</div>
             }
         </div>
         @RenderBody()

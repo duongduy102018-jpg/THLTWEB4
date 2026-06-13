@@ -1,17 +1,23 @@
+// Site-wide UX helpers
 (function () {
-    const imageInput = document.getElementById('imageInput');
-    const previewImage = document.getElementById('previewImage');
-
-    if (imageInput && previewImage) {
-        imageInput.addEventListener('change', function (event) {
-            const file = event.target.files && event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                previewImage.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
+    const fallbackImage = '/images/no-image.jpg';
+    document.querySelectorAll('img').forEach(function (img) {
+        img.loading = img.loading || 'lazy';
+        img.decoding = img.decoding || 'async';
+        img.addEventListener('error', function () {
+            if (!img.dataset.fallbackApplied) {
+                img.dataset.fallbackApplied = 'true';
+                img.src = img.alt && img.alt.toLowerCase().includes('avatar')
+                    ? '/images/avatar-default.png'
+                    : fallbackImage;
+            }
         });
-    }
+    });
+
+    document.querySelectorAll('input[type="file"]').forEach(function (input) {
+        input.addEventListener('change', function () {
+            const fileName = input.files && input.files.length ? input.files[0].name : '';
+            input.title = fileName || 'Chưa chọn tệp';
+        });
+    });
 })();

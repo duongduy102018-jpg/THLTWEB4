@@ -8,9 +8,10 @@
 <section class="hero-section">
     <div class="container">
         <div class="row align-items-center g-5">
-            <div class="col-lg-6">
+            <div class="col-lg-8">
                 <span class="hero-badge">🍃 Trái cây tươi mỗi ngày</span>
-                <h1 class="hero-title mt-3">Mua trái cây sạch, quản lý đơn hàng dễ dàng.</h1>
+                <h1 class="hero-title mt-3">Mua trái cây sạch, đặt hàng nhanh và theo dõi dễ dàng.</h1>
+                <p class="lead mt-3">Giao diện được tối ưu theo hướng rõ ràng, ít thao tác, ưu tiên hình ảnh sản phẩm, giỏ hàng và trạng thái đơn hàng.</p>
                 <div class="hero-actions">
                     <a asp-controller="Product" asp-action="Index" class="btn btn-success btn-lg px-4">Xem sản phẩm</a>
                     @if (isAdmin)
@@ -27,11 +28,6 @@
                     <div class="stat-card"><strong>500k</strong><span>Miễn phí ship</span></div>
                     <div class="stat-card"><strong>5</strong><span>Vai trò người dùng</span></div>
                 </div>
-            </div>
-            <div class="col-lg-6 hero-art">
-                <div class="hero-card">
-                </div>
-
             </div>
         </div>
     </div>
@@ -88,8 +84,10 @@
                 <div class="col-xl-3 col-lg-4 col-md-6">
                     <div class="product-card">
                         <a asp-controller="Product" asp-action="Display" asp-route-id="@product.Id" class="product-img-wrap">
-                            <img src="@(string.IsNullOrEmpty(product.ImageUrl) ? Url.Content("~/images/khay-thap-cam.jpg") : product.ImageUrl)" alt="@product.Name" />
-                            <span class="fresh-tag">Tươi mới</span>
+                            <img src="@(string.IsNullOrEmpty(product.ImageUrl) ? Url.Content("~/images/no-image.jpg") : Url.Content(product.ImageUrl))"
+                                 alt="@product.Name"
+                                 class="product-img" />
+                            <span class="fresh-tag">Tươi mỗi ngày</span>
                         </a>
                         <div class="product-card-body">
                             <small>@(product.Category?.Name ?? "Trái cây")</small>

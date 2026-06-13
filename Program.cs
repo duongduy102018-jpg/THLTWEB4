@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Webbanhang.Models;
@@ -89,6 +89,9 @@ app.MapControllerRoute(
 // Seed role + tài khoản mẫu
 using (var scope = app.Services.CreateScope())
 {
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await dbContext.Database.MigrateAsync();
+
     await SeedIdentityDataAsync(scope.ServiceProvider);
     await SeedProductDataAsync(scope.ServiceProvider);
 }

@@ -1,49 +1,190 @@
 @model Webbanhang.Models.RevenueReportViewModel
 @{
-    ViewData["Title"] = "Doanh thu hệ thống";
+    ViewData["Title"] = "Dashboard doanh thu";
 }
 
 <section class="page-hero">
     <div class="container position-relative">
-        <span class="hero-badge">📊 Admin</span>
-        <h1 class="fw-bold mt-3 display-5">Thống kê doanh thu</h1>
-        <p>Quản lý đơn hàng đã đặt và tổng hợp doanh thu của hệ thống.</p>
+        <span class="hero-badge">📊 Admin/Seller</span>
+        <h1 class="fw-bold mt-3 display-5">Dashboard doanh thu</h1>
+        <p>Theo dõi KPI kinh doanh, xu hướng doanh thu và danh sách sản phẩm bán chạy nhất.</p>
     </div>
 </section>
 
 <div class="container py-5">
-    <div class="row g-3 mb-4">
-        <div class="col-md-3"><div class="soft-card p-3"><span>Tổng đơn</span><h3>@Model.TotalOrders</h3></div></div>
-        <div class="col-md-3"><div class="soft-card p-3"><span>Tổng doanh thu</span><h3>@Model.TotalRevenue.ToString("N0") VNĐ</h3></div></div>
-        <div class="col-md-3"><div class="soft-card p-3"><span>Doanh thu hoàn tất</span><h3>@Model.CompletedRevenue.ToString("N0") VNĐ</h3></div></div>
-        <div class="col-md-3"><div class="soft-card p-3"><span>Đơn hoàn tất</span><h3>@Model.CompletedOrders</h3></div></div>
+    <div class="d-flex justify-content-end gap-2 flex-wrap mb-4">
+        <a asp-controller="Cart" asp-action="Orders" class="btn btn-outline-success px-4">Quản lý đơn hàng</a>
+        <a asp-controller="Cart" asp-action="ExportOrders" asp-route-format="csv" class="btn btn-success px-4">Xuất đơn hàng CSV</a>
     </div>
 
-    <div class="row g-3 mb-4">
-        <div class="col-md-4"><div class="alert alert-warning">Chờ/chuẩn bị: <strong>@Model.PendingOrders</strong></div></div>
-        <div class="col-md-4"><div class="alert alert-info">Đang giao: <strong>@Model.ShippingOrders</strong></div></div>
-        <div class="col-md-4"><div class="alert alert-danger">Đã hủy: <strong>@Model.CancelledOrders</strong></div></div>
-    </div>
-
-    <div class="soft-card p-3">
-        <h4 class="fw-bold mb-3">Đơn hàng gần đây</h4>
-        <div class="table-responsive">
-            <table class="table align-middle">
-                <thead><tr><th>Mã</th><th>Khách hàng</th><th>Ngày</th><th>Trạng thái</th><th>Tổng tiền</th></tr></thead>
-                <tbody>
-                @foreach (var order in Model.RecentOrders)
-                {
-                    <tr>
-                        <td>#@order.Id</td>
-                        <td>@order.CustomerName</td>
-                        <td>@order.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
-                        <td>@order.Status</td>
-                        <td><strong>@order.Total.ToString("N0") VNĐ</strong></td>
-                    </tr>
-                }
-                </tbody>
-            </table>
+    <div class="row g-3 mb-4 admin-kpi-grid">
+        <div class="col-md-3">
+            <div class="soft-card p-3 kpi-card">
+                <span>Tổng doanh thu</span>
+                <h3>@Model.TotalRevenue.ToString("N0") VNĐ</h3>
+                <small>Không tính đơn đã hủy</small>
+            </div>
         </div>
-        <a asp-controller="Cart" asp-action="Orders" class="btn btn-success">Quản lý đơn hàng</a>
+
+        <div class="col-md-3">
+            <div class="soft-card p-3 kpi-card">
+                <span>Tổng đơn hàng</span>
+                <h3>@Model.TotalOrders</h3>
+                <small>Tất cả đơn trong hệ thống</small>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="soft-card p-3 kpi-card">
+                <span>AOV</span>
+                <h3>@Model.AverageOrderValue.ToString("N0") VNĐ</h3>
+                <small>Giá trị đơn hàng trung bình</small>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="soft-card p-3 kpi-card">
+                <span>Tỷ lệ chuyển đổi</span>
+                <h3>@Model.ConversionRate.ToString("N2")%</h3>
+                <small>Ước tính: đơn đã giao / tổng đơn</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3"><div class="alert alert-warning mb-0">Đang xử lý: <strong>@Model.PendingOrders</strong></div></div>
+        <div class="col-md-3"><div class="alert alert-primary mb-0">Đã gửi: <strong>@Model.SentOrders</strong></div></div>
+        <div class="col-md-3"><div class="alert alert-info mb-0">Đang vận chuyển: <strong>@Model.ShippingOrders</strong></div></div>
+        <div class="col-md-3"><div class="alert alert-danger mb-0">Đã hủy: <strong>@Model.CancelledOrders</strong></div></div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+            <div class="soft-card p-3 revenue-chart-card">
+                <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-3">
+                    <div>
+                        <h4 class="fw-bold mb-1">Xu hướng doanh thu 7 ngày gần nhất</h4>
+                        <p class="text-muted mb-0">Biểu đồ được vẽ bằng Chart.js.</p>
+                    </div>
+                    <span class="status-pill">Chart.js</span>
+                </div>
+                <canvas id="revenueChart" height="130"></canvas>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="soft-card p-3 h-100">
+                <h4 class="fw-bold mb-3">Tóm tắt doanh thu</h4>
+                <div class="summary-row"><span>Doanh thu đã giao</span><strong>@Model.CompletedRevenue.ToString("N0") VNĐ</strong></div>
+                <div class="summary-row"><span>Đơn đã giao</span><strong>@Model.CompletedOrders</strong></div>
+                <div class="summary-row"><span>Đơn đang xử lý</span><strong>@Model.PendingOrders</strong></div>
+                <div class="summary-row"><span>Đơn đã hủy</span><strong>@Model.CancelledOrders</strong></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-5">
+            <div class="soft-card p-3 h-100">
+                <h4 class="fw-bold mb-3">Top-selling products</h4>
+
+                @if (!Model.TopSellingProducts.Any())
+                {
+                    <p class="text-muted mb-0">Chưa có dữ liệu sản phẩm bán chạy.</p>
+                }
+                else
+                {
+                    <div class="top-product-list">
+                        @for (var i = 0; i < Model.TopSellingProducts.Count; i++)
+                        {
+                            var product = Model.TopSellingProducts[i];
+                            <div class="top-product-item">
+                                <strong>#@(i + 1)</strong>
+                                <div>
+                                    <h6>@product.ProductName</h6>
+                                    <span>@product.QuantitySold sản phẩm • @product.Revenue.ToString("N0") VNĐ</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="soft-card p-3">
+                <h4 class="fw-bold mb-3">Đơn hàng gần đây</h4>
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Mã</th>
+                                <th>Khách hàng</th>
+                                <th>Ngày</th>
+                                <th>Trạng thái</th>
+                                <th>Tổng tiền</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var order in Model.RecentOrders)
+                            {
+                                <tr>
+                                    <td><strong>#@order.Id</strong></td>
+                                    <td>@order.CustomerName</td>
+                                    <td>@order.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td><span class="status-pill">@order.Status</span></td>
+                                    <td><strong>@order.Total.ToString("N0") VNĐ</strong></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const revenueLabels = @Html.Raw(Model.RevenueChartLabelsJson);
+    const revenueData = @Html.Raw(Model.RevenueChartDataJson);
+
+    const chartElement = document.getElementById('revenueChart');
+    if (chartElement) {
+        new Chart(chartElement, {
+            type: 'line',
+            data: {
+                labels: revenueLabels,
+                datasets: [{
+                    label: 'Doanh thu',
+                    data: revenueData,
+                    tension: 0.35,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: true },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return new Intl.NumberFormat('vi-VN').format(context.parsed.y) + ' VNĐ';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return new Intl.NumberFormat('vi-VN').format(value) + 'đ';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+</script>

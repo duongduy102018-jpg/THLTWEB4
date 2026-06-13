@@ -1,19 +1,290 @@
-@model Webbanhang.Models.CartSummaryViewModel
-@{ ViewData["Title"] = "Đặt hàng"; }
-<section class="page-hero"><div class="container position-relative"><span class="hero-badge">📦 Thanh toán</span><h1 class="fw-bold mt-3 display-5">Hoàn tất thông tin giao hàng</h1><p>Đơn hàng sẽ được lưu vào database và hiển thị trong trang theo dõi đơn hàng.</p></div></section>
+﻿@model Webbanhang.Models.CartSummaryViewModel
+@{
+    ViewData["Title"] = "Thanh toán";
+}
+
+<section class="page-hero">
+    <div class="container position-relative">
+        <span class="hero-badge">📦 Thanh toán</span>
+        <h1 class="fw-bold mt-3 display-5">One-page checkout</h1>
+        <p>Nhập thông tin giao hàng, chọn phương thức thanh toán và xác nhận đơn trên cùng một trang.</p>
+    </div>
+</section>
+
 <div class="container py-5">
-    <div class="checkout-progress mb-4"><div class="active">1. Giỏ hàng</div><div class="active">2. Thông tin giao hàng</div><div>3. Hoàn tất</div></div>
+    <div class="checkout-progress mb-4">
+        <div class="active">1. Giỏ hàng</div>
+        <div class="active">2. Thông tin giao hàng</div>
+        <div>3. Hoàn tất</div>
+    </div>
+
     <div class="row g-4">
-        <div class="col-lg-7"><div class="soft-card p-4 p-lg-5"><span class="hero-badge">Thông tin người nhận</span><h2 class="fw-bold mt-3">Xác nhận đặt hàng</h2><p class="text-muted">Vui lòng nhập thông tin chính xác để cửa hàng liên hệ và giao hàng.</p>
-            <form asp-action="ConfirmOrder" asp-controller="Cart" method="post" class="row g-3">@Html.AntiForgeryToken()
-                <div class="col-md-6"><label class="form-label">Họ tên</label><input name="customerName" class="form-control form-control-lg" placeholder="Nguyễn Văn A" required /></div>
-                <div class="col-md-6"><label class="form-label">Số điện thoại</label><input name="phone" class="form-control form-control-lg" placeholder="0909 000 000" required /></div>
-                <div class="col-12"><label class="form-label">Địa chỉ giao hàng</label><input name="address" class="form-control form-control-lg" placeholder="Số nhà, đường, phường/xã, quận/huyện" required /></div>
-                <div class="col-12"><label class="form-label">Phương thức thanh toán</label><select name="paymentMethod" class="form-select form-select-lg"><option value="COD">Thanh toán khi nhận hàng (COD)</option><option value="BankTransfer">Chuyển khoản ngân hàng</option><option value="Momo">Ví MoMo / ví điện tử</option></select></div>
-                <div class="col-12"><label class="form-label">Ghi chú</label><textarea name="note" class="form-control" rows="4" placeholder="VD: giao sau 18h, chọn trái vừa chín..."></textarea></div>
-                <div class="col-12 d-flex flex-wrap gap-2"><button type="submit" class="btn btn-success btn-lg px-4">Xác nhận đặt hàng</button><a asp-action="Index" class="btn btn-outline-secondary btn-lg px-4">Quay lại giỏ hàng</a></div>
-            </form>
-        </div></div>
-        <div class="col-lg-5"><div class="cart-summary"><h4>Đơn hàng của bạn</h4>@foreach (var item in Model.Items){<div class="summary-row"><span>@item.ProductName x @item.Quantity</span><strong>@item.Total.ToString("N0") VNĐ</strong></div>}<hr /><div class="summary-row"><span>Tạm tính</span><strong>@Model.Subtotal.ToString("N0") VNĐ</strong></div><div class="summary-row"><span>Giảm giá</span><strong>-@Model.Discount.ToString("N0") VNĐ</strong></div><div class="summary-row"><span>Phí giao hàng</span><strong>@(Model.FreeShipping ? "Miễn phí" : Model.ShippingFee.ToString("N0") + " VNĐ")</strong></div><div class="summary-row total"><span>Tổng cộng</span><strong>@Model.GrandTotal.ToString("N0") VNĐ</strong></div></div></div>
+        <div class="col-lg-7">
+            <div class="soft-card p-4 p-lg-5">
+                <span class="hero-badge">Thông tin người nhận</span>
+                <h2 class="fw-bold mt-3">Xác nhận đặt hàng</h2>
+                <p class="text-muted">Vui lòng nhập đầy đủ thông tin để cửa hàng liên hệ và giao hàng đúng địa chỉ.</p>
+
+                <form asp-action="ConfirmOrder" asp-controller="Cart" method="post" class="row g-3">
+                    @Html.AntiForgeryToken()
+
+                    <div class="col-md-6">
+                        <label class="form-label">Họ tên</label>
+                        <input name="customerName" class="form-control form-control-lg" placeholder="Nguyễn Văn A" required />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Số điện thoại</label>
+                        <input name="phone" class="form-control form-control-lg" placeholder="0909 000 000" required />
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">Số nhà, tên đường</label>
+                        <input name="streetAddress" class="form-control form-control-lg" placeholder="VD: 123 Lê Lợi" required />
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Tỉnh/Thành phố</label>
+                        <select name="city" id="citySelect" class="form-select form-select-lg" required>
+                            <option value="">Chọn tỉnh/thành</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Quận/Huyện</label>
+                        <select name="district" id="districtSelect" class="form-select form-select-lg" required>
+                            <option value="">Chọn quận/huyện</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Phường/Xã</label>
+                        <select name="ward" id="wardSelect" class="form-select form-select-lg" required>
+                            <option value="">Chọn phường/xã</option>
+                        </select>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">Phương thức thanh toán</label>
+                        <div class="payment-grid">
+                            <label class="payment-option">
+                                <input type="radio" name="paymentMethod" value="CreditDebitCard" required />
+                                <span>💳 Thẻ tín dụng / Thẻ ghi nợ</span>
+                            </label>
+                            <label class="payment-option">
+                                <input type="radio" name="paymentMethod" value="EWallet" />
+                                <span>📱 Ví điện tử</span>
+                            </label>
+                            <label class="payment-option">
+                                <input type="radio" name="paymentMethod" value="BankTransfer" />
+                                <span>🏦 Chuyển khoản ngân hàng</span>
+                            </label>
+                        </div>
+
+                        <div id="cardInfo" class="payment-detail mt-3 d-none">
+                            <h5>💳 Thông tin thẻ</h5>
+                            <div class="row g-3">
+                                <div class="col-md-7">
+                                    <label class="form-label">Số thẻ</label>
+                                    <input name="cardNumber" class="form-control" maxlength="19" placeholder="VD: 4111 1111 1111 1111" />
+                                </div>
+                                <div class="col-md-5">
+                                    <label class="form-label">Tên chủ thẻ</label>
+                                    <input name="cardHolder" class="form-control" placeholder="NGUYEN VAN A" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Ngày hết hạn</label>
+                                    <input name="cardExpiry" class="form-control" placeholder="MM/YY" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">CVV</label>
+                                    <input name="cardCvv" class="form-control" maxlength="4" placeholder="123" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="walletInfo" class="payment-detail mt-3 d-none">
+                            <h5>📱 Thông tin ví điện tử</h5>
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-6">
+                                    <label class="form-label">Chọn ví</label>
+                                    <select name="walletProvider" class="form-select">
+                                        <option value="MoMo">MoMo</option>
+                                        <option value="ZaloPay">ZaloPay</option>
+                                        <option value="VNPay">VNPay</option>
+                                        <option value="ShopeePay">ShopeePay</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Số điện thoại ví</label>
+                                    <input name="walletPhone" class="form-control" placeholder="0909 000 000" />
+                                </div>
+                            </div>
+                            <div class="payment-qr-panel mt-3">
+                                <div class="payment-qr-left">
+                                    <img src="~/images/payment-wallet-qr.svg" alt="Mã QR thanh toán ví điện tử HTP Food" class="payment-qr-img" />
+                                    <div class="payment-qr-caption">Mã QR ví điện tử</div>
+                                </div>
+                                <div class="wallet-box">
+                                    <strong>Nội dung thanh toán:</strong> HTPFOOD + Số điện thoại đặt hàng<br />
+                                    <span>Mở ứng dụng ví điện tử, chọn Quét mã QR và xác nhận thanh toán sau khi đặt hàng.</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="bankInfo" class="payment-detail mt-3 d-none">
+                            <h5>🏦 Thông tin chuyển khoản ngân hàng</h5>
+                            <div class="payment-qr-panel">
+                                <div class="payment-qr-left">
+                                    <img src="~/images/payment-bank-qr.svg" alt="Mã QR chuyển khoản ngân hàng HTP Food" class="payment-qr-img" />
+                                    <div class="payment-qr-caption">Mã QR ngân hàng</div>
+                                </div>
+                                <div class="bank-box flex-grow-1">
+                                    <div><span>Ngân hàng:</span><strong>Vietcombank</strong></div>
+                                    <div><span>Số tài khoản:</span><strong>0123456789</strong></div>
+                                    <div><span>Chủ tài khoản:</span><strong>HTP FOOD</strong></div>
+                                    <div><span>Nội dung:</span><strong>HTPFOOD + SĐT đặt hàng</strong></div>
+                                </div>
+                            </div>
+                            <label class="form-label mt-3">Mã giao dịch / ghi chú chuyển khoản</label>
+                            <input name="bankTransferNote" class="form-control" placeholder="Nhập mã giao dịch nếu đã chuyển khoản" />
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">Ghi chú</label>
+                        <textarea name="note" class="form-control" rows="4" placeholder="VD: giao sau 18h, chọn trái vừa chín..."></textarea>
+                    </div>
+
+                    <div class="col-12 d-flex flex-wrap gap-2">
+                        <button type="submit" class="btn btn-success btn-lg px-4">Xác nhận đặt hàng</button>
+                        <a asp-action="Index" class="btn btn-outline-secondary btn-lg px-4">Quay lại giỏ hàng</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="cart-summary">
+                <h4>Đơn hàng của bạn</h4>
+                @foreach (var item in Model.Items)
+                {
+                    <div class="summary-row"><span>@item.ProductName x @item.Quantity</span><strong>@item.Total.ToString("N0") VNĐ</strong></div>
+                }
+                <hr />
+                <div class="summary-row"><span>Tổng tiền hàng</span><strong>@Model.Subtotal.ToString("N0") VNĐ</strong></div>
+                <div class="summary-row"><span>Phí vận chuyển</span><strong>@(Model.FreeShipping ? "Miễn phí" : Model.ShippingFee.ToString("N0") + " VNĐ")</strong></div>
+                <div class="summary-row"><span>Giảm giá</span><strong>-@Model.Discount.ToString("N0") VNĐ</strong></div>
+                <div class="summary-row total"><span>Tổng cần thanh toán</span><strong>@Model.GrandTotal.ToString("N0") VNĐ</strong></div>
+            </div>
+        </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        const citySelect = document.getElementById('citySelect');
+        const districtSelect = document.getElementById('districtSelect');
+        const wardSelect = document.getElementById('wardSelect');
+
+        function fillSelect(select, placeholder, values) {
+            select.innerHTML = `<option value="">${placeholder}</option>`;
+            values.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.name;
+                option.textContent = item.name;
+                option.dataset.id = item.id;
+                select.appendChild(option);
+            });
+        }
+
+        async function loadJson(url) {
+            const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
+            if (!response.ok) throw new Error('Không tải được dữ liệu địa chỉ.');
+            return await response.json();
+        }
+
+        async function loadProvinces() {
+            citySelect.disabled = true;
+            districtSelect.disabled = true;
+            wardSelect.disabled = true;
+            fillSelect(citySelect, 'Đang tải tỉnh/thành...', []);
+
+            try {
+                const provinces = await loadJson('@Url.Action("GetProvinces", "Cart")');
+                if (!provinces || provinces.length === 0) {
+                    fillSelect(citySelect, 'Chưa có dữ liệu tỉnh/thành trong SQL', []);
+                    citySelect.disabled = true;
+                    return;
+                }
+                fillSelect(citySelect, 'Chọn tỉnh/thành', provinces);
+            } catch (error) {
+                fillSelect(citySelect, 'Không tải được dữ liệu', []);
+                console.error(error);
+            } finally {
+                citySelect.disabled = false;
+            }
+        }
+
+        citySelect.addEventListener('change', async () => {
+            const provinceId = citySelect.selectedOptions[0]?.dataset.id;
+            fillSelect(districtSelect, 'Chọn quận/huyện', []);
+            fillSelect(wardSelect, 'Chọn phường/xã', []);
+            districtSelect.disabled = true;
+            wardSelect.disabled = true;
+
+            if (!provinceId) return;
+
+            try {
+                fillSelect(districtSelect, 'Đang tải quận/huyện...', []);
+                const districts = await loadJson(`@Url.Action("GetDistricts", "Cart")?provinceId=${provinceId}`);
+                if (!districts || districts.length === 0) {
+                    fillSelect(districtSelect, 'Tỉnh này chưa có quận/huyện trong SQL', []);
+                    return;
+                }
+                fillSelect(districtSelect, 'Chọn quận/huyện', districts);
+                districtSelect.disabled = false;
+            } catch (error) {
+                fillSelect(districtSelect, 'Không tải được dữ liệu', []);
+                console.error(error);
+            }
+        });
+
+        districtSelect.addEventListener('change', async () => {
+            const districtId = districtSelect.selectedOptions[0]?.dataset.id;
+            fillSelect(wardSelect, 'Chọn phường/xã', []);
+            wardSelect.disabled = true;
+
+            if (!districtId) return;
+
+            try {
+                fillSelect(wardSelect, 'Đang tải phường/xã...', []);
+                const wards = await loadJson(`@Url.Action("GetWards", "Cart")?districtId=${districtId}`);
+                if (!wards || wards.length === 0) {
+                    fillSelect(wardSelect, 'Quận/Huyện này chưa có phường/xã trong SQL', []);
+                    return;
+                }
+                fillSelect(wardSelect, 'Chọn phường/xã', wards);
+                wardSelect.disabled = false;
+            } catch (error) {
+                fillSelect(wardSelect, 'Không tải được dữ liệu', []);
+                console.error(error);
+            }
+        });
+
+        const paymentDetails = {
+            CreditDebitCard: document.getElementById('cardInfo'),
+            EWallet: document.getElementById('walletInfo'),
+            BankTransfer: document.getElementById('bankInfo')
+        };
+
+        document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                Object.values(paymentDetails).forEach(box => box.classList.add('d-none'));
+                paymentDetails[radio.value]?.classList.remove('d-none');
+            });
+        });
+
+        loadProvinces();
+    </script>
+}

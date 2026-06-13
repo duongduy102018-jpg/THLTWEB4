@@ -98,7 +98,7 @@ namespace Webbanhang.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = SD.Role_Admin)]
-        public async Task<IActionResult> Add(Product product, IFormFile? imageUrl)
+        public async Task<IActionResult> Add(Product product, IFormFile? imageFile)
         {
             ModelState.Remove("ImageUrl");
             ModelState.Remove("Category");
@@ -106,9 +106,9 @@ namespace Webbanhang.Controllers
 
             if (ModelState.IsValid)
             {
-                if (imageUrl != null && imageUrl.Length > 0)
+                if (imageFile != null && imageFile.Length > 0)
                 {
-                    product.ImageUrl = await SaveImage(imageUrl);
+                    product.ImageUrl = await SaveImage(imageFile);
                 }
 
                 if (string.IsNullOrWhiteSpace(product.Description))
@@ -152,7 +152,7 @@ namespace Webbanhang.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = SD.Role_Admin)]
-        public async Task<IActionResult> Update(int id, Product product, IFormFile? imageUrl)
+        public async Task<IActionResult> Update(int id, Product product, IFormFile? imageFile)
         {
             ModelState.Remove("ImageUrl");
             ModelState.Remove("Category");
@@ -179,9 +179,9 @@ namespace Webbanhang.Controllers
                     : product.Description;
                 existingProduct.CategoryId = product.CategoryId;
 
-                if (imageUrl != null && imageUrl.Length > 0)
+                if (imageFile != null && imageFile.Length > 0)
                 {
-                    existingProduct.ImageUrl = await SaveImage(imageUrl);
+                    existingProduct.ImageUrl = await SaveImage(imageFile);
                 }
 
                 await _productRepository.UpdateAsync(existingProduct);
